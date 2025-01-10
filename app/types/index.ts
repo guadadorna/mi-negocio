@@ -1,23 +1,22 @@
-export type OrderStatus = 'pending' | 'completed' | 'cancelled' | 'payment_pending';
+export type OrderStatus = 'pending' | 'completed' | 'cancelled' | 'payment_delayed';
+
+export type CurrencyType = 'dolares' | 'euros' | 'reales' | 'pesos';
 
 export type Transaction = {
   id: number;
   type: 'buy' | 'sell' | 'manual';
-  item: string; // What is being sold or bought
-  amount: number; // Amount of the item being traded
-  payment: string; // Currency being paid
-  paymentAmount: number; // Amount expected in payment
-  employee: string; // Assigned employee
-  client: Client | null; // Client involved
-  status: 'pending' | 'completed' | 'cancelled' | 'payment_delayed'; // Transaction status
-  delayedBy?: string; // Employee who delayed the payment
-  pendingPayment?: { amount: number; currency: string }; // Payment still due
-  notes?: string; // Notes about the delayed payment
-  paymentCollector?: string; // Assigned employee to collect payment
+  item: CurrencyType;
+  amount: number;
+  payment: CurrencyType;
+  paymentAmount: number;
+  employee: string;
+  client: Client | null;
+  status: 'pending' | 'completed' | 'cancelled' | 'payment_delayed';
+  delayedBy?: string;
+  pendingPayment?: { amount: number; currency: CurrencyType };
+  notes?: string;
+  paymentCollector?: string;
 };
-
-
-
 
 export type Client = {
   id: number
@@ -36,7 +35,11 @@ export type ExchangeRates = {
 };
 
 export type Inventory = {
-  [key: string]: number; // Example: { dolares: 1000, euros: 500 }
+  dolares: number;
+  euros: number;
+  reales: number;
+  pesos: number;
+  [key: string]: number;  // This allows string indexing
 };
 
 

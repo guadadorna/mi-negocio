@@ -1,22 +1,23 @@
 'use client'
-import { useState, useMemo } from 'react'
-import { Client, Transaction, View, OrderStatus } from '../types'
+import { useState, useMemo,useRef,useEffect } from 'react'
+import { Client, Transaction, View, OrderStatus, CurrencyType} from './types'
 import * as XLSX from 'xlsx'
 import { ExchangeRates } from './types'
-import { useEffect } from 'react'
 import { format, isAfter, isSameDay, isSameWeek, isSameMonth, subMonths } from 'date-fns';
+import { generateTestData } from './testData';
+import { Inventory} from './types';
 
 export default function Home() {
   const [view, setView] = useState<View>('orders')
   const [clients, setClients] = useState<Client[]>([])
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [searchTerm, setSearchTerm] = useState('')
-  const [inventory, setInventory] = useState({
+  const [inventory, setInventory] = useState<Inventory>({
     dolares: 0,
     euros: 0,
     reales: 0,
     pesos: 0
-  })
+  });
 
 
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({
@@ -28,15 +29,25 @@ export default function Home() {
 
   const employees = ['Veneno', 'Chinda', 'Juan']
 
-  const [newTransaction, setNewTransaction] = useState({
-    type: 'buy' as const,
-    item: 'dolares',
+  type NewTransactionType = {
+    type: 'buy' | 'sell',
+    item: string,
+    amount: number,
+    payment: string,
+    paymentAmount: number,
+    employee: string,
+    client: Client | null
+  }
+  
+  const [newTransaction, setNewTransaction] = useState<NewTransactionType>({
+    type: 'buy',
+    item: 'dolares' as CurrencyType,
     amount: 0,
-    payment: 'pesos',
+    payment: 'pesos' as CurrencyType,
     paymentAmount: 0,
     employee: '',
-    client: null as Client | null
-  })
+    client: null
+  });
   
   const [newClient, setNewClient] = useState({
     name: '',
@@ -56,6 +67,8 @@ export default function Home() {
     const transaction: Transaction = {
       id: Date.now(),
       ...newTransaction,
+      item: newTransaction.item as CurrencyType,
+      payment: newTransaction.payment as CurrencyType,
       client: newTransaction.client,
       status: 'pending'
     }
@@ -63,14 +76,15 @@ export default function Home() {
     
     setNewTransaction({
       type: 'buy',
-      item: 'dolares',
+      item: 'dolares' as CurrencyType,
       amount: 0,
-      payment: 'pesos',
+      payment: 'pesos' as CurrencyType,
       paymentAmount: 0,
       employee: '',
       client: null
     })
   }
+
   function ClientManagement() {
     const [formData, setFormData] = useState({
       name: '',
@@ -321,9 +335,9 @@ export default function Home() {
       notes: ''
     });
     
+    const amountRef = useRef(formData.amount)
     const [editingOrder, setEditingOrder] = useState<Transaction | null>(null);
-    const [calculatedPaymentAmount, setCalculatedPaymentAmount] = useState<number>(0);
-  
+    const [calculatedPaymentAmount, setCalculatedPaymentAmount] = useState(0);
     const filteredClients = clients.filter(client =>
       client.name.toLowerCase().includes(formData.searchTerm.toLowerCase())
     );
@@ -373,12 +387,14 @@ export default function Home() {
       };
   
       if (editingOrder) {
-        setTransactions(prev => prev.map(t => 
+        const updatedTransactions = transactions.map(t => 
           t.id === editingOrder.id ? transaction : t
-        ));
+        );
+        setTransactions(updatedTransactions);
         setEditingOrder(null);
       } else {
-        setTransactions(prev => [transaction, ...prev]);
+        const newTransactions = [transaction, ...transactions];
+        setTransactions(newTransactions);
       }
   
       setFormData({
@@ -403,7 +419,7 @@ export default function Home() {
   
     useEffect(() => {
       const amount = Number(formData.amount);
-      if (!isNaN(amount)) {
+      if (!isNaN(amount) && amount > 0) {
         const calculated = calculatePaymentAmount(
           amount,
           newTransaction.item,
@@ -422,6 +438,7 @@ export default function Home() {
             {editingOrder ? 'Editar Orden' : 'Nueva Orden'}
           </h2>
           <div className="space-y-4">
+            {/* 1. Client Selection */}
             {!editingOrder && (
               <div className="relative">
                 <input
@@ -438,8 +455,10 @@ export default function Home() {
                         key={client.id}
                         className="p-2 hover:bg-gray-100 cursor-pointer"
                         onClick={() => {
-                          setNewTransaction(prev => ({ ...prev, client }));
-                          setFormData(prev => ({ ...prev, searchTerm: '' }));
+                          setNewTransaction((prev: NewTransactionType) => ({ ...prev, client }));
+                          setFormData((prev: { searchTerm: string, amount: string, paymentAmount: string, notes: string }) => 
+                            ({ ...prev, searchTerm: '' })
+                          );
                         }}
                       >
                         <div className="font-semibold">{client.name}</div>
@@ -451,7 +470,7 @@ export default function Home() {
                 )}
               </div>
             )}
-  
+   
             {newTransaction.client && (
               <div className="p-2 border rounded bg-gray-50">
                 <div className="font-semibold">{newTransaction.client.name}</div>
@@ -459,25 +478,42 @@ export default function Home() {
                 <div className="text-sm text-gray-600">{newTransaction.client.phone}</div>
               </div>
             )}
-  
+   
+            {/* 2. Employee Selection */}
+            <select 
+              className="w-full p-2 border rounded"
+              value={newTransaction.employee}
+              onChange={e => setNewTransaction((prev: NewTransactionType) => ({
+                ...prev,
+                employee: e.target.value
+              }))}
+            >
+              <option value="">Seleccionar empleado</option>
+              {employees.map(emp => (
+                <option key={emp} value={emp}>{emp}</option>
+              ))}
+            </select>
+   
+            {/* 3. Transaction Type */}
             <select 
               className="w-full p-2 border rounded"
               value={newTransaction.type}
-              onChange={e => setNewTransaction(prev => ({ 
+              onChange={e => setNewTransaction((prev: NewTransactionType) => ({ 
                 ...prev, 
-                type: e.target.value as 'buy' | 'sell'
+                type: e.target.value
               }))}
             >
               <option value="buy">Comprar</option>
               <option value="sell">Vender</option>
             </select>
-  
+   
+            {/* 4. Currency and Amount */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <select 
                   className="w-full p-2 border rounded"
                   value={newTransaction.item}
-                  onChange={e => setNewTransaction(prev => ({ ...prev, item: e.target.value }))}
+                  onChange={e => setNewTransaction((prev: NewTransactionType) => ({ ...prev, item: e.target.value }))}
                 >
                   <option value="dolares">Dólares</option>
                   <option value="euros">Euros</option>
@@ -497,44 +533,39 @@ export default function Home() {
                   }}
                 />
               </div>
-  
+   
               <div>
                 <select 
                   className="w-full p-2 border rounded"
                   value={newTransaction.payment}
-                  onChange={e => setNewTransaction(prev => ({ ...prev, payment: e.target.value }))}
+                  onChange={e => setNewTransaction((prev: NewTransactionType) => ({ ...prev, payment: e.target.value }))}
                 >
                   <option value="pesos">Pesos</option>
                   <option value="dolares">Dólares</option>
                   <option value="euros">Euros</option>
                   <option value="reales">Reales</option>
                 </select>
-                <div className="w-full mt-2 p-2 border rounded bg-gray-50">
-                  {calculatedPaymentAmount.toFixed(2)} {newTransaction.payment}
+                <div className="w-full mt-2 flex gap-2">
+                  <input
+                    type="number"
+                    value={calculatedPaymentAmount.toFixed(2)}
+                    onChange={(e) => setCalculatedPaymentAmount(Number(e.target.value))}
+                    className="w-full p-2 border rounded"
+                  />
+                  <span className="p-2">{newTransaction.payment}</span>
                 </div>
               </div>
             </div>
-  
+   
+            {/* Notes */}
             <textarea
               placeholder="Notas adicionales"
               className="w-full p-2 border rounded"
               value={formData.notes}
               onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
             />
-              <select 
-                className="w-full p-2 border rounded"
-                value={newTransaction.employee}
-                onChange={e => setNewTransaction(prev => ({
-                  ...prev,
-                  employee: e.target.value
-                }))}
-              >
-              <option value="">Seleccionar empleado</option>
-              {employees.map(emp => (
-                <option key={emp} value={emp}>{emp}</option>
-              ))}
-            </select>
-
+   
+            {/* Action Buttons */}
             <div className="flex gap-2">
               <button 
                 onClick={handleCreateTransaction}
@@ -566,7 +597,8 @@ export default function Home() {
             </div>
           </div>
         </div>
-  
+   
+        {/* Pending Orders Section */}
         <div className="bg-white shadow rounded p-4">
           <h2 className="text-lg font-semibold mb-4">Órdenes Pendientes</h2>
           <div className="space-y-4">
@@ -576,9 +608,9 @@ export default function Home() {
                 <div key={transaction.id} className="border p-3 rounded">
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-semibold">{transaction.client.name}</p>
-                      <p className="text-sm text-gray-600">{transaction.client.address}</p>
-                      <p className="text-sm text-gray-600 mb-2">{transaction.client.phone}</p>
+                      <p className="font-semibold">{transaction.client!.name}</p>
+                      <p className="text-sm text-gray-600">{transaction.client!.address}</p>
+                      <p className="text-sm text-gray-600 mb-2">{transaction.client!.phone}</p>
                       <p>
                         {transaction.type === 'buy' ? 'Comprar' : 'Vender'} {transaction.amount} {transaction.item}
                       </p>
@@ -615,18 +647,30 @@ export default function Home() {
         </div>
       </>
     );
-  }
+   }
 
   
-  function EmployeeView({ rates, transactions, setTransactions, inventory, setInventory }) {
-    const [selectedEmployee, setSelectedEmployee] = useState('');
-    const [statusNote, setStatusNote] = useState('');
-    const [paymentCollector, setPaymentCollector] = useState('');
+  function EmployeeView({
+    rates,
+    transactions,
+    setTransactions,
+    inventory,
+    setInventory,
+  }: {
+    rates: ExchangeRates;
+    transactions: Transaction[];
+    setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+    inventory: Inventory;
+    setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+  }) {
+    const [selectedEmployee, setSelectedEmployee] = useState<string>('');
+    const [statusNote, setStatusNote] = useState<string>('');
+    const [paymentCollector, setPaymentCollector] = useState<string>('');
     const employeeOrders = transactions?.filter(t => 
       t.employee === selectedEmployee && t.status === 'pending'
     );
   
-    const updateOrderStatus = (orderId, newStatus) => {
+    const updateOrderStatus = (orderId: number, newStatus: OrderStatus) => {
       // Get the transaction we're updating
       const transaction = transactions.find(t => t.id === orderId);
       
@@ -667,7 +711,11 @@ export default function Home() {
       setStatusNote('');
     };
     
-    const completeDelayedPayment = (transaction, collectorEmployee, completionNote) => {
+    const completeDelayedPayment = (
+      transaction: Transaction,
+      collectorEmployee: string,
+      completionNote: string
+    ) => {
       // Update only the payment currency in inventory
       setInventory(prev => ({
         ...prev,
@@ -717,9 +765,9 @@ export default function Home() {
                 <div key={order.id} className="border p-4 rounded">
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <p className="font-semibold">{order.client.name}</p>
-                      <p className="text-sm text-gray-600">{order.client.address}</p>
-                      <p className="text-sm text-gray-600">{order.client.phone}</p>
+                      <p className="font-semibold">{order.client!.name}</p>
+                      <p className="text-sm text-gray-600">{order.client!.address}</p>
+                      <p className="text-sm text-gray-600">{order.client!.phone}</p>
                     </div>
                     <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">
                       Pendiente
@@ -781,7 +829,7 @@ export default function Home() {
               <div key={transaction.id} className="border p-4 rounded bg-yellow-50">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-semibold">{transaction.client.name}</p>
+                    <p className="font-semibold">{transaction.client!.name}</p>
                     <p className="text-sm text-gray-600">
                       {transaction.type === 'buy' ? 'Compra' : 'Venta'} {transaction.amount} {transaction.item}
                     </p>
@@ -845,13 +893,49 @@ export default function Home() {
 
 
 
-  function InventoryView({ inventory, setInventory, transactions, setTransactions }) {
-    const [adjustmentsInput, setAdjustmentsInput] = useState(() =>
-      Object.fromEntries(Object.keys(inventory).map((key) => [key, '']))
+  function InventoryView({
+    inventory,
+    setInventory,
+    transactions,
+    setTransactions,
+  }: {
+    inventory: Inventory;
+    setInventory: React.Dispatch<React.SetStateAction<Inventory>>;
+    transactions: Transaction[];
+    setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  }) {
+
+    const [transactionNotes, setTransactionNotes] = useState<Record<string | number, string>>({});
+
+const updateTransactionNote = (transactionId: number, note: string) => {
+  setTransactions(prev => prev.map(t => 
+    t.id === transactionId 
+      ? { ...t, notes: t.notes ? `${t.notes}\nNota adicional: ${note}` : `Nota adicional: ${note}` }
+      : t
+  ));
+  setTransactionNotes(prev => ({ ...prev, [transactionId]: '' }));
+};
+    
+    const todaysTransactions = useMemo(() => {
+      const today = new Date();
+      return transactions
+        .filter(t => {
+          const transactionDate = new Date(t.id);
+          return (
+            transactionDate.getDate() === today.getDate() &&
+            transactionDate.getMonth() === today.getMonth() &&
+            transactionDate.getFullYear() === today.getFullYear()
+          );
+        })
+        .sort((a, b) => b.id - a.id);
+    }, [transactions]);
+
+    const [adjustmentsInput, setAdjustmentsInput] = useState<Record<keyof Inventory, string>>(() =>
+      Object.fromEntries(Object.keys(inventory).map((key) => [key, ''])) as Record<keyof Inventory, string>
     );
     
-    const calculateInventory = () => {
-      const current = {
+    const calculateInventory = (): Inventory => {
+      const current: Inventory = {
         dolares: 0,
         euros: 0,
         reales: 0,
@@ -879,7 +963,7 @@ export default function Home() {
       return current;
     }; 
     
-    const applyAdjustment = (item) => {
+    const applyAdjustment = (item: keyof Inventory) => {
       const newValue = parseInt(adjustmentsInput[item], 10);
       
       if (!isNaN(newValue)) {
@@ -891,19 +975,19 @@ export default function Home() {
         
         // Only create transaction if there's a difference
         if (difference !== 0) {
-          const newTransaction = {
+          const newTransaction: Transaction = {
             id: Date.now(),
             type: 'manual',
-            item: item,
+            item: item as CurrencyType,
             amount: difference,
-            payment: '',
+            payment: 'pesos' as CurrencyType,
             paymentAmount: 0,
             employee: 'Sistema',
             client: { id: 0, name: 'Ajuste Manual', address: '', phone: '' },
             status: 'completed',
             notes: `Ajuste manual: ${difference > 0 ? 'añadidos' : 'restados'} ${Math.abs(difference)} ${item}`
           };
-  
+    
           setTransactions(prev => [newTransaction, ...prev]);
         }
         
@@ -911,7 +995,7 @@ export default function Home() {
       }
     };
 
-    const renderInventoryItem = (item, amount) => (
+    const renderInventoryItem = (item: keyof Inventory, amount: number) => (
       <div key={item} className="p-3 border rounded">
         <div className="font-medium capitalize">{item}</div>
         <div className={`text-lg ${amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -1062,31 +1146,121 @@ export default function Home() {
             </div>
           </div>
         </div>
+        <div className="bg-white shadow rounded p-4">
+  <h3 className="font-semibold mb-4">Transacciones de Hoy</h3>
+  <div className="space-y-4">
+  {todaysTransactions.map((t) => (
+  <div
+    key={t.id}
+    className={`border p-3 rounded ${
+      t.status === 'completed' ? 'bg-green-50' :
+      t.status === 'cancelled' ? 'bg-red-50' : 'bg-yellow-50'
+    }`}
+  >
+    <div className="flex justify-between">
+      <div>
+        <span className="font-medium">
+          {t.type === 'manual' ? 'Ajuste Manual' :
+           t.type === 'buy' ? 'Compra' : 'Venta'} {t.amount} {t.item}
+        </span>
+        {t.client && (
+          <div className="text-sm text-gray-600">
+            Cliente: {t.client.name}
+          </div>
+        )}
+        {t.notes && (
+          <div className="text-sm text-gray-600">{t.notes}</div>
+        )}
+      </div>
+      <div className="text-right">
+        <div className={`font-medium ${
+          t.status === 'completed' ? 'text-green-600' :
+          t.status === 'cancelled' ? 'text-red-600' : 'text-yellow-600'
+        }`}>
+          {t.status === 'completed' ? 'Completada' :
+           t.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
+        </div>
+        <div className="text-sm text-gray-600">
+          {new Date(t.id).toLocaleTimeString('es-ES', {
+                                                        day: '2-digit',
+                                                        month: '2-digit',
+                                                        year: 'numeric'
+                                                      })}
+        </div>
+      </div>
+    </div>
+    <div className="mt-2">
+      <input
+        type="text"
+        placeholder="Agregar nota adicional"
+        value={transactionNotes[t.id] || ''}
+        onChange={(e) => setTransactionNotes(prev => ({
+          ...prev,
+          [t.id]: e.target.value
+        }))}
+        className="w-full p-2 border rounded"
+      />
+      <button
+        onClick={() => {
+          setTransactions(prev => prev.map(tx => 
+            tx.id === t.id 
+              ? { ...tx, notes: tx.notes ? `${tx.notes}\nNota adicional: ${transactionNotes[t.id]}` : `Nota adicional: ${transactionNotes[t.id]}` }
+              : tx
+          ));
+          setTransactionNotes(prev => ({ ...prev, [t.id]: '' }));
+        }}
+        className="mt-1 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+        disabled={!transactionNotes[t.id]}
+      >
+        Agregar Nota
+      </button>
+    </div>
+  </div>
+))}
+
+ {todaysTransactions.length === 0 && (
+      <div className="text-gray-500 text-center py-4">
+        No hay transacciones hoy
+      </div>
+    )}
+  </div>
+</div>
       </div>
     );
 }
 
-function TransactionHistory({ transactions, setTransactions }) {
+
+function TransactionHistory({ 
+  transactions, 
+  setTransactions 
+}: { 
+  transactions: Transaction[];
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+}) {
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
-  const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-// Calculate if there are old transactions (older than 3 months)
-const oldTransactions = useMemo(() => {
-  const threeMonthsAgo = subMonths(new Date(), 3);
-  return transactions.filter(t => 
-    !isAfter(new Date(t.id), threeMonthsAgo)
-  );
-}, [transactions]);
+  // Calculate old transactions (older than 3 months)
+  const oldTransactions = useMemo((): Transaction[] => {
+    const threeMonthsAgo = subMonths(new Date(), 3);
+    return transactions.filter(t => 
+      !isAfter(new Date(t.id), threeMonthsAgo)
+    );
+  }, [transactions]);
 
-const oldTransactionsExist = oldTransactions.length > 0;
-const oldTransactionsCount = oldTransactions.length;
+  const oldTransactionsExist = oldTransactions.length > 0;
+  const oldTransactionsCount = oldTransactions.length;
 
   const handleExportAllToExcel = () => {
     const data = [
       ['Historial Completo de Transacciones'],
       ['Fecha', 'Tipo', 'Cliente', 'Item', 'Cantidad', 'Método de Pago', 'Monto', 'Empleado', 'Estado', 'Notas'],
-      ...transactions.map(t => [
-        new Date(t.id).toLocaleDateString(),
+      ...transactions.map((t: Transaction) => [
+        new Date(t.id).toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        }),
         t.type === 'manual' ? 'Ajuste Manual' : t.type === 'buy' ? 'Compra' : 'Venta',
         t.client?.name || '',
         t.item,
@@ -1104,10 +1278,9 @@ const oldTransactionsCount = oldTransactions.length;
     XLSX.utils.book_append_sheet(wb, ws, 'Transacciones');
     XLSX.writeFile(wb, `Todas_Las_Transacciones_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
-  
 
   // Filter to keep only last 3 months of transactions
-  const activeTransactions = useMemo(() => {
+  const activeTransactions = useMemo((): Transaction[] => {
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
     return transactions.filter(t => new Date(t.id) > threeMonthsAgo);
@@ -1115,9 +1288,9 @@ const oldTransactionsCount = oldTransactions.length;
 
   // Group transactions by selected time period
   const groupedTransactions = useMemo(() => {
-    const groups = {};
+    const groups: Record<string, Transaction[]> = {};
     
-    activeTransactions.forEach(transaction => {
+    activeTransactions.forEach((transaction: Transaction) => {
       const date = new Date(transaction.id);
       let groupKey = '';
       
@@ -1126,7 +1299,6 @@ const oldTransactionsCount = oldTransactions.length;
           groupKey = date.toLocaleDateString();
           break;
         case 'week':
-          // Get monday of the week
           const monday = new Date(date);
           monday.setDate(date.getDate() - date.getDay() + 1);
           groupKey = `Semana del ${monday.toLocaleDateString()}`;
@@ -1149,15 +1321,18 @@ const oldTransactionsCount = oldTransactions.length;
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
     
-    const oldTransactions = transactions.filter(t => new Date(t.id) <= threeMonthsAgo);
+    const oldTransactions = transactions.filter((t: Transaction) => new Date(t.id) <= threeMonthsAgo);
     
     if (oldTransactions.length > 0) {
-      // Create Excel file
       const data = [
         ['Historial de Transacciones'],
         ['Fecha', 'Tipo', 'Cliente', 'Item', 'Cantidad', 'Método de Pago', 'Monto', 'Empleado', 'Estado', 'Notas'],
-        ...oldTransactions.map(t => [
-          new Date(t.id).toLocaleDateString(),
+        ...oldTransactions.map((t: Transaction) => [
+          new Date(t.id).toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          }),
           t.type === 'manual' ? 'Ajuste Manual' : t.type === 'buy' ? 'Compra' : 'Venta',
           t.client?.name || '',
           t.item,
@@ -1175,7 +1350,6 @@ const oldTransactionsCount = oldTransactions.length;
       XLSX.utils.book_append_sheet(wb, ws, 'Transacciones');
       XLSX.writeFile(wb, `Transacciones_Antiguas_${new Date().toISOString().split('T')[0]}.xlsx`);
 
-      // Remove old transactions from state
       setTransactions(transactions.filter(t => new Date(t.id) > threeMonthsAgo));
     }
   };
@@ -1183,107 +1357,115 @@ const oldTransactionsCount = oldTransactions.length;
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center mb-4">
-  <div className="flex gap-4">
-    <select
-      value={groupBy}
-      onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'month')}
-      className="border rounded p-2"
-    >
-      <option value="day">Por Día</option>
-      <option value="week">Por Semana</option>
-      <option value="month">Por Mes</option>
-    </select>
-    <button
-      onClick={handleExportAllToExcel}
-      className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-    >
-      Exportar Todo
-    </button>
-    <button
-      onClick={handleArchiveOldTransactions}
-      className={`px-4 py-2 rounded text-white ${
-        oldTransactionsExist ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-400 cursor-not-allowed'
-      }`}
-      disabled={!oldTransactionsExist}
-    >
-      Archivar Transacciones Antiguas
-      {oldTransactionsExist && <span className="ml-2">({oldTransactionsCount})</span>}
-    </button>
-  </div>
-</div>
-      {Object.entries(groupedTransactions)
-        .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
-        .map(([date, transactions]) => (
-          <div key={date} className="bg-white shadow rounded p-4">
-            <button
-              onClick={() => {
-                const newExpanded = new Set(expandedGroups);
-                if (newExpanded.has(date)) {
-                  newExpanded.delete(date);
-                } else {
-                  newExpanded.add(date);
-                }
-                setExpandedGroups(newExpanded);
-              }}
-              className="w-full text-left font-medium p-2 hover:bg-gray-50 rounded"
-            >
-              {date} ({transactions.length} transacciones)
-            </button>
+        <div className="flex gap-4">
+          <select
+            value={groupBy}
+            onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'month')}
+            className="border rounded p-2"
+          >
+            <option value="day">Por Día</option>
+            <option value="week">Por Semana</option>
+            <option value="month">Por Mes</option>
+          </select>
+          <button
+            onClick={handleExportAllToExcel}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Exportar Todo
+          </button>
+          <button
+            onClick={handleArchiveOldTransactions}
+            className={`px-4 py-2 rounded text-white ${
+              oldTransactionsExist ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-gray-400 cursor-not-allowed'
+            }`}
+            disabled={!oldTransactionsExist}
+          >
+            Archivar Transacciones Antiguas
+            {oldTransactionsExist && <span className="ml-2">({oldTransactionsCount})</span>}
+          </button>
+        </div>
+      </div>
+      {Object.entries(groupedTransactions).sort(([dateA, _]: [string, Transaction[]]) => {
+        if (!dateA) return 0;
+        const dateParts = dateA.split('/').map(Number);
+        if (dateParts.length < 3) return 0;
+        const [dayA, monthA, yearA] = dateParts;
+        const dateAObj = new Date(yearA, monthA - 1, dayA);
+        return -dateAObj.getTime();
+      }).map(([date, groupTransactions]: [string, Transaction[]]) => (
+        <div key={date} className="bg-white shadow rounded p-4">
+          <button
+            onClick={() => {
+              const newExpanded = new Set(expandedGroups);
+              if (newExpanded.has(date)) {
+                newExpanded.delete(date);
+              } else {
+                newExpanded.add(date);
+              }
+              setExpandedGroups(newExpanded);
+            }}
+            className="w-full text-left font-medium p-2 hover:bg-gray-50 rounded"
+          >
+            {date} ({groupTransactions.length} transacciones)
+          </button>
 
-            {expandedGroups.has(date) && (
-              <div className="mt-2 space-y-2">
-                {transactions
-                  .sort((a, b) => b.id - a.id)
-                  .map(t => (
-                    <div
-                      key={t.id}
-                      className={`border p-3 rounded ${
-                        t.status === 'completed' ? 'bg-green-50' :
-                        t.status === 'cancelled' ? 'bg-red-50' : 'bg-yellow-50'
-                      }`}
-                    >
-                      <div className="flex justify-between">
-                        <div>
-                          <span className="font-medium">
-                            {t.type === 'manual' ? 'Ajuste Manual' :
-                             t.type === 'buy' ? 'Compra' : 'Venta'}
-                          </span>
-                          <div className="text-sm text-gray-600">
-                            {t.type === 'manual' ? (
-                              <p>{t.amount > 0 ? 'Añadidos' : 'Restados'} {Math.abs(t.amount)} {t.item}</p>
-                            ) : (
-                              <>
-                                <p>Cliente: {t.client?.name}</p>
-                                <p>{t.amount} {t.item} {t.type === 'buy' ? 'por' : 'a cambio de'} {t.paymentAmount} {t.payment}</p>
-                                <p>Empleado: {t.employee}</p>
-                              </>
-                            )}
-                            {t.notes && <p className="mt-1"><strong>Notas:</strong> {t.notes}</p>}
-                          </div>
+          {expandedGroups.has(date) && (
+            <div className="mt-2 space-y-2">
+              {groupTransactions
+                .sort((a, b) => b.id - a.id)
+                .map(t => (
+                  <div
+                    key={t.id}
+                    className={`border p-3 rounded ${
+                      t.status === 'completed' ? 'bg-green-50' :
+                      t.status === 'cancelled' ? 'bg-red-50' : 'bg-yellow-50'
+                    }`}
+                  >
+                    <div className="flex justify-between">
+                      <div>
+                        <span className="font-medium">
+                          {t.type === 'manual' ? 'Ajuste Manual' :
+                           t.type === 'buy' ? 'Compra' : 'Venta'}
+                        </span>
+                        <div className="text-sm text-gray-600">
+                          {t.type === 'manual' ? (
+                            <p>{t.amount > 0 ? 'Añadidos' : 'Restados'} {Math.abs(t.amount)} {t.item}</p>
+                          ) : (
+                            <>
+                              <p>Cliente: {t.client?.name}</p>
+                              <p>{t.amount} {t.item} {t.type === 'buy' ? 'por' : 'a cambio de'} {t.paymentAmount} {t.payment}</p>
+                              <p>Empleado: {t.employee}</p>
+                            </>
+                          )}
+                          {t.notes && <p className="mt-1"><strong>Notas:</strong> {t.notes}</p>}
                         </div>
-                        <div className="text-right">
-                          <div className={`font-medium ${
-                            t.status === 'completed' ? 'text-green-600' :
-                            t.status === 'cancelled' ? 'text-red-600' : 'text-yellow-600'
-                          }`}>
-                            {t.status === 'completed' ? 'Completada' :
-                             t.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {new Date(t.id).toLocaleTimeString()}
-                          </div>
+                      </div>
+                      <div className="text-right">
+                        <div className={`font-medium ${
+                          t.status === 'completed' ? 'text-green-600' :
+                          t.status === 'cancelled' ? 'text-red-600' : 'text-yellow-600'
+                        }`}>
+                          {t.status === 'completed' ? 'Completada' :
+                           t.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {new Date(t.id).toLocaleTimeString('es-ES', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })}
                         </div>
                       </div>
                     </div>
-                  ))}
-              </div>
-            )}
-          </div>
-        ))}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
-
 
   useEffect(() => {
     console.log("All transactions:", transactions);
@@ -1326,6 +1508,12 @@ const oldTransactionsCount = oldTransactions.length;
         >
           Historial
         </button>
+        <button
+  onClick={() => generateTestData(setClients, setTransactions)}
+  className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+>
+  Generar Datos de Prueba
+</button>
       </div>
     </div>
 

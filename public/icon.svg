@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Outer background (darker blue) -->
+  <circle cx="256" cy="256" r="256" fill="#1d4ed8"/>
+  
+  <!-- Inner circle (lighter blue) without stroke -->
+  <circle cx="256" cy="256" r="200" fill="#3b82f6"/>
+  
+  <!-- Eye shape -->
+  <path d="M256 160c-100 0-183.334 64-216 96 32.666 32 116 96 216 96s183.334-64 216-96c-32.666-32-116-96-216-96z" 
+        fill="#ffffff"/>
+  
+  <!-- Iris -->
+  <circle cx="256" cy="256" r="64" fill="#3b82f6"/>
+  
+  <!-- Pupil -->
+  <circle cx="256" cy="256" r="32" fill="#000000"/>
+  
+  <!-- Highlights -->
+  <circle cx="236" cy="236" r="16" fill="#ffffff"/>
+  <circle cx="276" cy="276" r="8" fill="#ffffff" opacity="0.5"/>
+</svg>
