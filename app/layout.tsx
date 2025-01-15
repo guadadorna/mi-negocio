@@ -14,14 +14,20 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1.0,
+  maximumScale: 1.0,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
-  title: "Mi Negocio",
+  title: "Blue Eyes",
   description: "App de gestión de cambio de divisas",
-  viewport: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Mi Negocio",
+    title: "Blue Eyes",
   },
   icons: {
     apple: '/apple-touch-icon.png',

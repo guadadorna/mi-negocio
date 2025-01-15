@@ -1,22 +1,23 @@
+export type TransactionType = 'buy' | 'sell' | 'manual';
 export type OrderStatus = 'pending' | 'completed' | 'cancelled' | 'payment_delayed';
-
 export type CurrencyType = 'dolares' | 'euros' | 'reales' | 'pesos';
 
 export type Transaction = {
   id: number;
-  type: 'buy' | 'sell' | 'manual';
+  type: TransactionType;  // Changed this line
   item: CurrencyType;
   amount: number;
   payment: CurrencyType;
   paymentAmount: number;
   employee: string;
   client: Client | null;
-  status: 'pending' | 'completed' | 'cancelled' | 'payment_delayed';
+  status: OrderStatus;  // Using OrderStatus type
   delayedBy?: string;
   pendingPayment?: { amount: number; currency: CurrencyType };
   notes?: string;
   paymentCollector?: string;
 };
+
 
 export type Client = {
   id: number
@@ -42,10 +43,12 @@ export type Inventory = {
   [key: string]: number;  // This allows string indexing
 };
 
-
-interface ExchangeRateInput {
-  dolarToPeso: string | number
-  euroToDolar: string | number
-  realToDolar: string | number
-}
-
+export type NewTransactionType = {
+  type: TransactionType;
+  item: CurrencyType;
+  amount: number;
+  payment: CurrencyType;
+  paymentAmount: number;
+  employee: string;
+  client: Client | null;
+};

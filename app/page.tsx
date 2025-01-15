@@ -1,17 +1,18 @@
 'use client'
-import { useState, useMemo,useRef,useEffect } from 'react'
-import { Client, Transaction, View, OrderStatus, CurrencyType} from './types'
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { useState, useMemo, useEffect } from 'react'
+import { Client, Transaction, View, OrderStatus, CurrencyType, TransactionType, NewTransactionType,Inventory,ExchangeRates } from './types'
 import * as XLSX from 'xlsx'
-import { ExchangeRates } from './types'
-import { format, isAfter, isSameDay, isSameWeek, isSameMonth, subMonths } from 'date-fns';
-import { generateTestData } from './testData';
-import { Inventory} from './types';
+import { generateTestData } from './testData'
+import { isAfter, subMonths } from 'date-fns'
+import { useCallback } from 'react';
+
+const SHOW_TEST_BUTTON = process.env.NODE_ENV === 'development';
 
 export default function Home() {
   const [view, setView] = useState<View>('orders')
   const [clients, setClients] = useState<Client[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [searchTerm, setSearchTerm] = useState('')
   const [inventory, setInventory] = useState<Inventory>({
     dolares: 0,
     euros: 0,
@@ -19,72 +20,29 @@ export default function Home() {
     pesos: 0
   });
 
-
   const [exchangeRates, setExchangeRates] = useState<ExchangeRates>({
     dolarToPeso: { buy: 0.0, sell: 0.0 },
     euroToDolar: { buy: 0.0, sell: 0.0 },
     realToDolar: { buy: 0.0, sell: 0.0 },
   });
   
-
+ 
   const employees = ['Veneno', 'Chinda', 'Juan']
 
-  type NewTransactionType = {
-    type: 'buy' | 'sell',
-    item: string,
-    amount: number,
-    payment: string,
-    paymentAmount: number,
-    employee: string,
-    client: Client | null
-  }
   
   const [newTransaction, setNewTransaction] = useState<NewTransactionType>({
     type: 'buy',
-    item: 'dolares' as CurrencyType,
+    item: 'dolares',
     amount: 0,
-    payment: 'pesos' as CurrencyType,
+    payment: 'pesos',
     paymentAmount: 0,
     employee: '',
     client: null
   });
   
-  const [newClient, setNewClient] = useState({
-    name: '',
-    address: '',
-    phone: ''
-  })
   
-  function addClient(e: React.FormEvent) {
-    e.preventDefault()
-    setClients([...clients, { ...newClient, id: Date.now() }])
-    setNewClient({ name: '', address: '', phone: '' })
-  }
-  
-  function createTransaction() {
-    if (!newTransaction.client) return
-    
-    const transaction: Transaction = {
-      id: Date.now(),
-      ...newTransaction,
-      item: newTransaction.item as CurrencyType,
-      payment: newTransaction.payment as CurrencyType,
-      client: newTransaction.client,
-      status: 'pending'
-    }
-    setTransactions(prev => [transaction, ...prev])
-    
-    setNewTransaction({
-      type: 'buy',
-      item: 'dolares' as CurrencyType,
-      amount: 0,
-      payment: 'pesos' as CurrencyType,
-      paymentAmount: 0,
-      employee: '',
-      client: null
-    })
-  }
 
+  
   function ClientManagement() {
     const [formData, setFormData] = useState({
       name: '',
@@ -321,10 +279,10 @@ export default function Home() {
   }: {
     rates: ExchangeRates;
     onRatesChange: (rates: ExchangeRates) => void;
-    newTransaction: any;
-    setNewTransaction: (transaction: any) => void;
+    newTransaction: NewTransactionType;
+    setNewTransaction: React.Dispatch<React.SetStateAction<NewTransactionType>>;
     transactions: Transaction[];
-    setTransactions: (transactions: Transaction[]) => void;
+    setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
     clients: Client[];
     employees: string[];
   }) {
@@ -335,30 +293,29 @@ export default function Home() {
       notes: ''
     });
     
-    const amountRef = useRef(formData.amount)
     const [editingOrder, setEditingOrder] = useState<Transaction | null>(null);
     const [calculatedPaymentAmount, setCalculatedPaymentAmount] = useState(0);
     const filteredClients = clients.filter(client =>
       client.name.toLowerCase().includes(formData.searchTerm.toLowerCase())
     );
   
-    const calculatePaymentAmount = (
+    const calculatePaymentAmount = useCallback((
       amount: number,
       item: string,
       payment: string,
       type: 'buy' | 'sell'
     ): number => {
       if (!amount || amount <= 0) return 0;
-  
+    
       try {
         let valueInUSD = amount;
-  
+    
         if (item === 'euros') {
           valueInUSD = amount * (type === 'buy' ? rates.euroToDolar.buy : rates.euroToDolar.sell);
         } else if (item === 'reales') {
           valueInUSD = amount * (type === 'buy' ? rates.realToDolar.buy : rates.realToDolar.sell);
         }
-  
+    
         if (payment === 'pesos') {
           return valueInUSD * (type === 'buy' ? rates.dolarToPeso.buy : rates.dolarToPeso.sell);
         } else if (payment === 'euros') {
@@ -366,13 +323,13 @@ export default function Home() {
         } else if (payment === 'reales') {
           return valueInUSD / (type === 'buy' ? rates.realToDolar.buy : rates.realToDolar.sell);
         }
-  
+    
         return valueInUSD;
       } catch (error) {
         console.error('Error calculating payment amount:', error);
         return 0;
       }
-    };
+    }, [rates]);
   
     const handleCreateTransaction = () => {
       if (!newTransaction.client) return;
@@ -387,14 +344,12 @@ export default function Home() {
       };
   
       if (editingOrder) {
-        const updatedTransactions = transactions.map(t => 
+        setTransactions(prev => prev.map(t => 
           t.id === editingOrder.id ? transaction : t
-        );
-        setTransactions(updatedTransactions);
+        ));
         setEditingOrder(null);
       } else {
-        const newTransactions = [transaction, ...transactions];
-        setTransactions(newTransactions);
+        setTransactions(prev => [transaction, ...prev]);
       }
   
       setFormData({
@@ -419,7 +374,11 @@ export default function Home() {
   
     useEffect(() => {
       const amount = Number(formData.amount);
-      if (!isNaN(amount) && amount > 0) {
+      if (
+        !isNaN(amount) &&
+        amount > 0 &&
+        (newTransaction.type === 'buy' || newTransaction.type === 'sell') // Only allow 'buy' or 'sell'
+      ) {
         const calculated = calculatePaymentAmount(
           amount,
           newTransaction.item,
@@ -428,8 +387,8 @@ export default function Home() {
         );
         setCalculatedPaymentAmount(calculated);
       }
-    }, [formData.amount, newTransaction.item, newTransaction.payment, newTransaction.type, rates]);
-  
+    }, [formData.amount, newTransaction.item, newTransaction.payment, newTransaction.type, rates, calculatePaymentAmount]); // Added calculatePaymentAmount
+    
     return (
       <>
         <ExchangeRatesInput rates={rates} editable={true} onRatesChange={onRatesChange} />
@@ -438,136 +397,112 @@ export default function Home() {
             {editingOrder ? 'Editar Orden' : 'Nueva Orden'}
           </h2>
           <div className="space-y-4">
-            {/* 1. Client Selection */}
-            {!editingOrder && (
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Buscar cliente..."
-                  className="w-full p-2 border rounded"
-                  value={formData.searchTerm}
-                  onChange={e => setFormData(prev => ({ ...prev, searchTerm: e.target.value }))}
-                />
-                {formData.searchTerm && (
-                  <div className="absolute z-10 w-full bg-white border rounded-b mt-1 max-h-48 overflow-auto">
-                    {filteredClients.map(client => (
-                      <div
-                        key={client.id}
-                        className="p-2 hover:bg-gray-100 cursor-pointer"
-                        onClick={() => {
-                          setNewTransaction((prev: NewTransactionType) => ({ ...prev, client }));
-                          setFormData((prev: { searchTerm: string, amount: string, paymentAmount: string, notes: string }) => 
-                            ({ ...prev, searchTerm: '' })
-                          );
-                        }}
-                      >
-                        <div className="font-semibold">{client.name}</div>
-                        <div className="text-sm text-gray-600">{client.address}</div>
-                        <div className="text-sm text-gray-600">{client.phone}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-   
-            {newTransaction.client && (
-              <div className="p-2 border rounded bg-gray-50">
-                <div className="font-semibold">{newTransaction.client.name}</div>
-                <div className="text-sm text-gray-600">{newTransaction.client.address}</div>
-                <div className="text-sm text-gray-600">{newTransaction.client.phone}</div>
-              </div>
-            )}
-   
-            {/* 2. Employee Selection */}
-            <select 
+            {/* Client Selection */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar cliente..."
+                className="w-full p-2 border rounded"
+                value={formData.searchTerm}
+                onChange={e => setFormData(prev => ({ ...prev, searchTerm: e.target.value }))}
+              />
+              {formData.searchTerm && (
+                <div className="absolute z-10 w-full bg-white border rounded-b mt-1 max-h-48 overflow-auto">
+                  {filteredClients.map(client => (
+                    <div
+                      key={client.id}
+                      className="p-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => {
+                        setNewTransaction(prev => ({
+                          ...prev,
+                          client: client
+                        }));
+                        setFormData(prev => ({ ...prev, searchTerm: '' }));
+                      }}
+                    >
+                      <div className="font-semibold">{client.name}</div>
+                      <div className="text-sm text-gray-600">{client.address}</div>
+                      <div className="text-sm text-gray-600">{client.phone}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Employee Selection */}
+            <select
               className="w-full p-2 border rounded"
               value={newTransaction.employee}
-              onChange={e => setNewTransaction((prev: NewTransactionType) => ({
-                ...prev,
-                employee: e.target.value
-              }))}
+              onChange={(e) =>
+                setNewTransaction((prev: NewTransactionType) => ({ ...prev, employee: e.target.value }))
+              }
             >
               <option value="">Seleccionar empleado</option>
-              {employees.map(emp => (
-                <option key={emp} value={emp}>{emp}</option>
-              ))}
+              <option value="employee1">Empleado 1</option>
+              <option value="employee2">Empleado 2</option>
             </select>
-   
-            {/* 3. Transaction Type */}
-            <select 
+    
+            {/* Transaction Type */}
+            <select
               className="w-full p-2 border rounded"
               value={newTransaction.type}
-              onChange={e => setNewTransaction((prev: NewTransactionType) => ({ 
-                ...prev, 
-                type: e.target.value
-              }))}
+              onChange={(e) =>
+                setNewTransaction((prev: NewTransactionType) => ({
+                  ...prev,
+                  type: e.target.value as TransactionType,
+                }))
+              }
             >
               <option value="buy">Comprar</option>
               <option value="sell">Vender</option>
             </select>
-   
-            {/* 4. Currency and Amount */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <select 
-                  className="w-full p-2 border rounded"
-                  value={newTransaction.item}
-                  onChange={e => setNewTransaction((prev: NewTransactionType) => ({ ...prev, item: e.target.value }))}
-                >
-                  <option value="dolares">Dólares</option>
-                  <option value="euros">Euros</option>
-                  <option value="reales">Reales</option>
-                  <option value="pesos">Pesos</option>
-                </select>
-                <input
-                  type="number"
-                  placeholder="Cantidad"
-                  className="w-full mt-2 p-2 border rounded"
-                  value={formData.amount}
-                  onChange={(e) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      amount: e.target.value
-                    }));
-                  }}
-                />
-              </div>
-   
-              <div>
-                <select 
-                  className="w-full p-2 border rounded"
-                  value={newTransaction.payment}
-                  onChange={e => setNewTransaction((prev: NewTransactionType) => ({ ...prev, payment: e.target.value }))}
-                >
-                  <option value="pesos">Pesos</option>
-                  <option value="dolares">Dólares</option>
-                  <option value="euros">Euros</option>
-                  <option value="reales">Reales</option>
-                </select>
-                <div className="w-full mt-2 flex gap-2">
-                  <input
-                    type="number"
-                    value={calculatedPaymentAmount.toFixed(2)}
-                    onChange={(e) => setCalculatedPaymentAmount(Number(e.target.value))}
-                    className="w-full p-2 border rounded"
-                  />
-                  <span className="p-2">{newTransaction.payment}</span>
-                </div>
-              </div>
-            </div>
-   
+    
+            {/* Currency Selection */}
+            <select
+              className="w-full p-2 border rounded"
+              value={newTransaction.item}
+              onChange={(e) =>
+                setNewTransaction((prev: NewTransactionType) => ({
+                  ...prev,
+                  item: e.target.value as CurrencyType,
+                }))
+              }
+            >
+              <option value="dolares">Dólares</option>
+              <option value="euros">Euros</option>
+              <option value="reales">Reales</option>
+              <option value="pesos">Pesos</option>
+            </select>
+    
+            {/* Payment Selection */}
+            <select
+              className="w-full p-2 border rounded"
+              value={newTransaction.payment}
+              onChange={(e) =>
+                setNewTransaction((prev: NewTransactionType) => ({
+                  ...prev,
+                  payment: e.target.value as CurrencyType,
+                }))
+              }
+            >
+              <option value="pesos">Pesos</option>
+              <option value="dolares">Dólares</option>
+              <option value="euros">Euros</option>
+              <option value="reales">Reales</option>
+            </select>
+    
             {/* Notes */}
             <textarea
               placeholder="Notas adicionales"
               className="w-full p-2 border rounded"
               value={formData.notes}
-              onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, notes: e.target.value }))
+              }
             />
-   
+    
             {/* Action Buttons */}
             <div className="flex gap-2">
-              <button 
+              <button
                 onClick={handleCreateTransaction}
                 className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-gray-300"
                 disabled={!newTransaction.client || !formData.amount || !newTransaction.employee}
@@ -575,10 +510,15 @@ export default function Home() {
                 {editingOrder ? 'Guardar Cambios' : 'Crear Orden'}
               </button>
               {editingOrder && (
-                <button 
+                <button
                   onClick={() => {
                     setEditingOrder(null);
-                    setFormData({ searchTerm: '', amount: '', paymentAmount: '', notes: '' });
+                    setFormData({
+                      searchTerm: '',
+                      amount: '',
+                      paymentAmount: '',
+                      notes: '',
+                    });
                     setNewTransaction({
                       type: 'buy',
                       item: 'dolares',
@@ -586,7 +526,7 @@ export default function Home() {
                       payment: 'pesos',
                       paymentAmount: 0,
                       employee: '',
-                      client: null
+                      client: null,
                     });
                   }}
                   className="flex-1 bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
@@ -597,14 +537,14 @@ export default function Home() {
             </div>
           </div>
         </div>
-   
+    
         {/* Pending Orders Section */}
         <div className="bg-white shadow rounded p-4">
           <h2 className="text-lg font-semibold mb-4">Órdenes Pendientes</h2>
           <div className="space-y-4">
             {transactions
-              .filter(t => t.status === 'pending')
-              .map(transaction => (
+              .filter((t) => t.status === 'pending')
+              .map((transaction) => (
                 <div key={transaction.id} className="border p-3 rounded">
                   <div className="flex justify-between items-start">
                     <div>
@@ -612,9 +552,12 @@ export default function Home() {
                       <p className="text-sm text-gray-600">{transaction.client!.address}</p>
                       <p className="text-sm text-gray-600 mb-2">{transaction.client!.phone}</p>
                       <p>
-                        {transaction.type === 'buy' ? 'Comprar' : 'Vender'} {transaction.amount} {transaction.item}
+                        {transaction.type === 'buy' ? 'Comprar' : 'Vender'}{' '}
+                        {transaction.amount} {transaction.item}
                       </p>
-                      <p>Pago: {transaction.paymentAmount} {transaction.payment}</p>
+                      <p>
+                        Pago: {transaction.paymentAmount} {transaction.payment}
+                      </p>
                       <p>Empleado: {transaction.employee}</p>
                     </div>
                     <button
@@ -624,7 +567,7 @@ export default function Home() {
                           searchTerm: '',
                           amount: transaction.amount.toString(),
                           paymentAmount: transaction.paymentAmount.toString(),
-                          notes: transaction.notes || ''
+                          notes: transaction.notes || '',
                         });
                         setNewTransaction({
                           type: transaction.type,
@@ -633,7 +576,7 @@ export default function Home() {
                           payment: transaction.payment,
                           paymentAmount: transaction.paymentAmount,
                           employee: transaction.employee,
-                          client: transaction.client
+                          client: transaction.client,
                         });
                       }}
                       className="bg-gray-100 text-gray-600 px-3 py-1 rounded hover:bg-gray-200"
@@ -647,9 +590,8 @@ export default function Home() {
         </div>
       </>
     );
-   }
-
-  
+  }
+    
   function EmployeeView({
     rates,
     transactions,
@@ -891,8 +833,6 @@ export default function Home() {
     );
   }
 
-
-
   function InventoryView({
     inventory,
     setInventory,
@@ -907,14 +847,14 @@ export default function Home() {
 
     const [transactionNotes, setTransactionNotes] = useState<Record<string | number, string>>({});
 
-const updateTransactionNote = (transactionId: number, note: string) => {
+  const updateTransactionNote = (transactionId: number, note: string) => {
   setTransactions(prev => prev.map(t => 
     t.id === transactionId 
       ? { ...t, notes: t.notes ? `${t.notes}\nNota adicional: ${note}` : `Nota adicional: ${note}` }
       : t
   ));
   setTransactionNotes(prev => ({ ...prev, [transactionId]: '' }));
-};
+  };
     
     const todaysTransactions = useMemo(() => {
       const today = new Date();
@@ -995,36 +935,6 @@ const updateTransactionNote = (transactionId: number, note: string) => {
       }
     };
 
-    const renderInventoryItem = (item: keyof Inventory, amount: number) => (
-      <div key={item} className="p-3 border rounded">
-        <div className="font-medium capitalize">{item}</div>
-        <div className={`text-lg ${amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
-          {amount}
-        </div>
-        <div className="mt-2 flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Nuevo Total"
-            value={adjustmentsInput[item] || ''}
-            onChange={(e) => {
-              if (/^-?\d*$/.test(e.target.value)) {
-                setAdjustmentsInput(prev => ({ ...prev, [item]: e.target.value }));
-              }
-            }}
-            className="w-full p-2 border rounded"
-          />
-          <button
-            onClick={() => applyAdjustment(item)}
-            className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-          >
-            Aplicar
-          </button>
-        </div>
-      </div>
-    );
-
-    
-  
     // Calculate current inventory for display
     
     const currentInventory = calculateInventory();
@@ -1201,14 +1111,7 @@ const updateTransactionNote = (transactionId: number, note: string) => {
         className="w-full p-2 border rounded"
       />
       <button
-        onClick={() => {
-          setTransactions(prev => prev.map(tx => 
-            tx.id === t.id 
-              ? { ...tx, notes: tx.notes ? `${tx.notes}\nNota adicional: ${transactionNotes[t.id]}` : `Nota adicional: ${transactionNotes[t.id]}` }
-              : tx
-          ));
-          setTransactionNotes(prev => ({ ...prev, [t.id]: '' }));
-        }}
+        onClick={() => updateTransactionNote(t.id, transactionNotes[t.id])}
         className="mt-1 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
         disabled={!transactionNotes[t.id]}
       >
@@ -1216,68 +1119,68 @@ const updateTransactionNote = (transactionId: number, note: string) => {
       </button>
     </div>
   </div>
-))}
+  ))}
 
  {todaysTransactions.length === 0 && (
       <div className="text-gray-500 text-center py-4">
         No hay transacciones hoy
       </div>
     )}
+    </div>
   </div>
-</div>
       </div>
     );
-}
+  }
 
 
-function TransactionHistory({ 
-  transactions, 
-  setTransactions 
-}: { 
-  transactions: Transaction[];
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-}) {
-  const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  function TransactionHistory({ 
+    transactions, 
+    setTransactions 
+  }: { 
+    transactions: Transaction[];
+    setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  }) {
+    const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-  // Calculate old transactions (older than 3 months)
-  const oldTransactions = useMemo((): Transaction[] => {
-    const threeMonthsAgo = subMonths(new Date(), 3);
-    return transactions.filter(t => 
-      !isAfter(new Date(t.id), threeMonthsAgo)
-    );
-  }, [transactions]);
+    // Calculate old transactions (older than 3 months)
+    const oldTransactions = useMemo((): Transaction[] => {
+      const threeMonthsAgo = subMonths(new Date(), 3);
+      return transactions.filter(t => 
+        !isAfter(new Date(t.id), threeMonthsAgo)
+      );
+    }, [transactions]);
 
-  const oldTransactionsExist = oldTransactions.length > 0;
-  const oldTransactionsCount = oldTransactions.length;
+    const oldTransactionsExist = oldTransactions.length > 0;
+    const oldTransactionsCount = oldTransactions.length;
 
-  const handleExportAllToExcel = () => {
-    const data = [
-      ['Historial Completo de Transacciones'],
-      ['Fecha', 'Tipo', 'Cliente', 'Item', 'Cantidad', 'Método de Pago', 'Monto', 'Empleado', 'Estado', 'Notas'],
-      ...transactions.map((t: Transaction) => [
-        new Date(t.id).toLocaleDateString('es-ES', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric'
-        }),
-        t.type === 'manual' ? 'Ajuste Manual' : t.type === 'buy' ? 'Compra' : 'Venta',
-        t.client?.name || '',
-        t.item,
-        t.amount,
-        t.payment,
-        t.paymentAmount,
-        t.employee,
-        t.status,
-        t.notes || ''
-      ])
-    ];
-  
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Transacciones');
-    XLSX.writeFile(wb, `Todas_Las_Transacciones_${new Date().toISOString().split('T')[0]}.xlsx`);
-  };
+    const handleExportAllToExcel = () => {
+      const data = [
+        ['Historial Completo de Transacciones'],
+        ['Fecha', 'Tipo', 'Cliente', 'Item', 'Cantidad', 'Método de Pago', 'Monto', 'Empleado', 'Estado', 'Notas'],
+        ...transactions.map((t: Transaction) => [
+          new Date(t.id).toLocaleDateString('es-ES', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          }),
+          t.type === 'manual' ? 'Ajuste Manual' : t.type === 'buy' ? 'Compra' : 'Venta',
+          t.client?.name || '',
+          t.item,
+          t.amount,
+          t.payment,
+          t.paymentAmount,
+          t.employee,
+          t.status,
+          t.notes || ''
+        ])
+      ];
+    
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Transacciones');
+      XLSX.writeFile(wb, `Todas_Las_Transacciones_${new Date().toISOString().split('T')[0]}.xlsx`);
+    };
 
   // Filter to keep only last 3 months of transactions
   const activeTransactions = useMemo((): Transaction[] => {
@@ -1385,7 +1288,7 @@ function TransactionHistory({
           </button>
         </div>
       </div>
-      {Object.entries(groupedTransactions).sort(([dateA, _]: [string, Transaction[]]) => {
+      {Object.entries(groupedTransactions).sort(([dateA]: [string, Transaction[]]) => {
         if (!dateA) return 0;
         const dateParts = dateA.split('/').map(Number);
         if (dateParts.length < 3) return 0;
@@ -1465,7 +1368,7 @@ function TransactionHistory({
       ))}
     </div>
   );
-}
+  }
 
   useEffect(() => {
     console.log("All transactions:", transactions);
@@ -1476,7 +1379,7 @@ function TransactionHistory({
   return (
   <main className="p-4 max-w-2xl mx-auto">
     <div className="flex justify-between items-center mb-6">
-      <h1 className="text-2xl font-bold">Mi Negocio</h1>
+      <h1 className="text-2xl font-bold">Blue Eyes</h1>
       <div className="flex gap-2">
         <button
           onClick={() => setView('orders')}
@@ -1508,12 +1411,15 @@ function TransactionHistory({
         >
           Historial
         </button>
+  
+        {SHOW_TEST_BUTTON && (
         <button
-  onClick={() => generateTestData(setClients, setTransactions)}
-  className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
->
-  Generar Datos de Prueba
-</button>
+          onClick={() => generateTestData(setClients, setTransactions)}
+          className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+        >
+          Generar Datos de Prueba
+        </button>
+      )}
       </div>
     </div>
 
@@ -1552,5 +1458,5 @@ function TransactionHistory({
       />
     )}
   </main>
-);
+  );
 }

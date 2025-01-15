@@ -1,4 +1,10 @@
-export const generateTestData = (setClients, setTransactions) => {
+import { Client, Transaction, TransactionType, CurrencyType, OrderStatus } from './types';
+import { Dispatch, SetStateAction } from 'react';
+
+export const generateTestData = (
+  setClients: Dispatch<SetStateAction<Client[]>>,
+  setTransactions: Dispatch<SetStateAction<Transaction[]>>
+) => {
     const testClients = Array.from({ length: 50 }, (_, i) => ({
       id: i + 1,
       name: `Cliente ${i + 1}`,
@@ -18,14 +24,14 @@ export const generateTestData = (setClients, setTransactions) => {
         const client = testClients[Math.floor(Math.random() * testClients.length)];
         transactions.push({
           id: date.getTime() + t,
-          type: Math.random() > 0.5 ? 'buy' : 'sell',
-          item: ['dolares', 'euros', 'reales'][Math.floor(Math.random() * 3)],
+          type: (Math.random() > 0.5 ? 'buy' : 'sell') as TransactionType,
+          item: ['dolares', 'euros', 'reales'][Math.floor(Math.random() * 3)] as CurrencyType,
           amount: 100 + Math.floor(Math.random() * 900),
-          payment: 'pesos',
+          payment: 'pesos' as CurrencyType,
           paymentAmount: 1000 + Math.floor(Math.random() * 9000),
           employee: ['Veneno', 'Chinda', 'Juan'][Math.floor(Math.random() * 3)],
           client,
-          status: 'completed'
+          status: 'completed' as OrderStatus
         });
       }
     }
