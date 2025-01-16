@@ -2,6 +2,16 @@ export type TransactionType = 'buy' | 'sell' | 'manual';
 export type OrderStatus = 'pending' | 'completed' | 'cancelled' | 'payment_delayed';
 export type CurrencyType = 'dolares' | 'euros' | 'reales' | 'pesos';
 
+export type NewTransactionType = {
+  type: TransactionType;
+  item: CurrencyType;
+  amount: number;
+  payment: CurrencyType;
+  paymentAmount: number;
+  employee: string;
+  client: Client | null;
+};
+
 export type Transaction = {
   id: number;
   type: TransactionType;  // Changed this line
@@ -43,12 +53,4 @@ export type Inventory = {
   [key: string]: number;  // This allows string indexing
 };
 
-export type NewTransactionType = {
-  type: TransactionType;
-  item: CurrencyType;
-  amount: number;
-  payment: CurrencyType;
-  paymentAmount: number;
-  employee: string;
-  client: Client | null;
-};
+

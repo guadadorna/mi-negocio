@@ -1,6 +1,6 @@
 {
-  "name": "Mi Negocio",
-  "short_name": "Mi Negocio",
+  "name": "Blue Eyes",
+  "short_name": "Blue Eyes",
   "description": "App de gestión de cambio de divisas",
   "start_url": "/",
   "display": "standalone",
@@ -16,6 +16,12 @@
       "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

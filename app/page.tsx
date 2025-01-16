@@ -266,7 +266,6 @@ export default function Home() {
   }
   
 
-  
   function OrdersView({
     rates,
     onRatesChange,
@@ -295,16 +294,23 @@ export default function Home() {
     
     const [editingOrder, setEditingOrder] = useState<Transaction | null>(null);
     const [calculatedPaymentAmount, setCalculatedPaymentAmount] = useState(0);
-    const filteredClients = clients.filter(client =>
-      client.name.toLowerCase().includes(formData.searchTerm.toLowerCase())
+  
+    // Filter clients based on search term
+    const filteredClients = useMemo(() => 
+      clients.filter(client =>
+        client.name.toLowerCase().includes(formData.searchTerm.toLowerCase())
+      ),
+      [clients, formData.searchTerm]
     );
   
     const calculatePaymentAmount = useCallback((
       amount: number,
       item: string,
       payment: string,
-      type: 'buy' | 'sell'
+      type: TransactionType
     ): number => {
+      // Return 0 for manual transactions as they don't need payment calculation
+      if (type === 'manual') return 0;
       if (!amount || amount <= 0) return 0;
     
       try {
@@ -332,12 +338,12 @@ export default function Home() {
     }, [rates]);
   
     const handleCreateTransaction = () => {
-      if (!newTransaction.client) return;
+      if (!newTransaction.client || !formData.amount || !newTransaction.employee) return;
       
       const transaction: Transaction = {
         id: editingOrder ? editingOrder.id : Date.now(),
         ...newTransaction,
-        amount: Number(formData.amount),  // Get amount from formData here
+        amount: Number(formData.amount),
         paymentAmount: calculatedPaymentAmount,
         status: 'pending',
         notes: formData.notes
@@ -352,6 +358,7 @@ export default function Home() {
         setTransactions(prev => [transaction, ...prev]);
       }
   
+      // Reset form
       setFormData({
         searchTerm: '',
         amount: '',
@@ -372,13 +379,10 @@ export default function Home() {
       setCalculatedPaymentAmount(0);
     };
   
+    // Update calculated payment amount when relevant fields change
     useEffect(() => {
       const amount = Number(formData.amount);
-      if (
-        !isNaN(amount) &&
-        amount > 0 &&
-        (newTransaction.type === 'buy' || newTransaction.type === 'sell') // Only allow 'buy' or 'sell'
-      ) {
+      if (!isNaN(amount) && amount > 0 && newTransaction.type !== 'manual') {
         const calculated = calculatePaymentAmount(
           amount,
           newTransaction.item,
@@ -387,31 +391,197 @@ export default function Home() {
         );
         setCalculatedPaymentAmount(calculated);
       }
-    }, [formData.amount, newTransaction.item, newTransaction.payment, newTransaction.type, rates, calculatePaymentAmount]); // Added calculatePaymentAmount
-    
+    }, [formData.amount, newTransaction.item, newTransaction.payment, newTransaction.type, calculatePaymentAmount]);
+  
     return (
-      <>
-        <ExchangeRatesInput rates={rates} editable={true} onRatesChange={onRatesChange} />
-        <div className="bg-white shadow rounded p-4 mb-6">
-          <h2 className="text-lg font-semibold mb-4">
-            {editingOrder ? 'Editar Orden' : 'Nueva Orden'}
-          </h2>
-          <div className="space-y-4">
+      <div className="space-y-8">
+        {/* Exchange Rates Section */}
+          <div className="bg-white shadow-xl rounded-xl p-8">
+            <h2 className="text-3xl font-bold mb-8 text-gray-800">Tasas de Cambio</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Dólar a Peso */}
+              <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                <h3 className="text-2xl font-bold mb-4">Dólar a Peso</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-lg font-medium mb-2">Compra</label>
+                    <input
+                      type="number"
+                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      value={rates.dolarToPeso.buy}
+                      onChange={(e) => onRatesChange({
+                        ...rates,
+                        dolarToPeso: {
+                          ...rates.dolarToPeso,
+                          buy: parseFloat(e.target.value) || 0
+                        }
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-lg font-medium mb-2">Venta</label>
+                    <input
+                      type="number"
+                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      value={rates.dolarToPeso.sell}
+                      onChange={(e) => onRatesChange({
+                        ...rates,
+                        dolarToPeso: {
+                          ...rates.dolarToPeso,
+                          sell: parseFloat(e.target.value) || 0
+                        }
+                      })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Euro a Dólar */}
+              <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
+                <h3 className="text-2xl font-bold mb-4">Euro a Dólar</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-lg font-medium mb-2">Compra</label>
+                    <input
+                      type="number"
+                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-green-500"
+                      value={rates.euroToDolar.buy}
+                      onChange={(e) => onRatesChange({
+                        ...rates,
+                        euroToDolar: {
+                          ...rates.euroToDolar,
+                          buy: parseFloat(e.target.value) || 0
+                        }
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-lg font-medium mb-2">Venta</label>
+                    <input
+                      type="number"
+                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-green-500"
+                      value={rates.euroToDolar.sell}
+                      onChange={(e) => onRatesChange({
+                        ...rates,
+                        euroToDolar: {
+                          ...rates.euroToDolar,
+                          sell: parseFloat(e.target.value) || 0
+                        }
+                      })}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Real a Dólar */}
+              <div className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200">
+                <h3 className="text-2xl font-bold mb-4">Real a Dólar</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-lg font-medium mb-2">Compra</label>
+                    <input
+                      type="number"
+                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                      value={rates.realToDolar.buy}
+                      onChange={(e) => onRatesChange({
+                        ...rates,
+                        realToDolar: {
+                          ...rates.realToDolar,
+                          buy: parseFloat(e.target.value) || 0
+                        }
+                      })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-lg font-medium mb-2">Venta</label>
+                    <input
+                      type="number"
+                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                      value={rates.realToDolar.sell}
+                      onChange={(e) => onRatesChange({
+                        ...rates,
+                        realToDolar: {
+                          ...rates.realToDolar,
+                          sell: parseFloat(e.target.value) || 0
+                        }
+                      })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+  
+         {/* New Order Section */}
+      <div className="bg-white shadow-xl rounded-xl p-8">
+        <h2 className="text-3xl font-bold mb-8 text-gray-800">
+          {editingOrder ? 'Editar Orden' : 'Nueva Orden'}
+        </h2>
+
+        {/* Operation Summary Box */}
+        {formData.amount && calculatedPaymentAmount > 0 && (
+          <div className="mb-8 p-6 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl border-2 border-blue-300">
+            <h3 className="text-2xl font-bold mb-4 text-blue-900">Resumen de la Operación</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xl">
+              <div className="space-y-3">
+                <p className="flex justify-between">
+                  <span className="font-medium">Operación:</span>
+                  <span className="font-bold">
+                    {newTransaction.type === 'buy' ? 'Compra' : 'Venta'}
+                  </span>
+                </p>
+                <p className="flex justify-between">
+                  <span className="font-medium">Cantidad:</span>
+                  <span className="font-bold">
+                    {formData.amount} {newTransaction.item}
+                  </span>
+                </p>
+              </div>
+              <div className="space-y-3">
+                <p className="flex justify-between">
+                  <span className="font-medium">
+                    {newTransaction.type === 'buy' ? 'A pagar' : 'A recibir'}:
+                  </span>
+                  <span className="font-bold text-blue-800">
+                    {calculatedPaymentAmount.toLocaleString('es-AR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })} {newTransaction.payment}
+                  </span>
+                </p>
+                <p className="flex justify-between text-blue-700">
+                  <span className="font-medium">Tasa efectiva:</span>
+                  <span className="font-bold">
+                    {(calculatedPaymentAmount / Number(formData.amount)).toLocaleString('es-AR', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })} {newTransaction.payment}/{newTransaction.item}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Left Column */}
+          <div className="space-y-6">
             {/* Client Selection */}
             <div className="relative">
+              <label className="block text-lg font-medium mb-2">Cliente</label>
               <input
                 type="text"
                 placeholder="Buscar cliente..."
-                className="w-full p-2 border rounded"
+                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
                 value={formData.searchTerm}
                 onChange={e => setFormData(prev => ({ ...prev, searchTerm: e.target.value }))}
               />
               {formData.searchTerm && (
-                <div className="absolute z-10 w-full bg-white border rounded-b mt-1 max-h-48 overflow-auto">
+                <div className="absolute z-10 w-full mt-2 bg-white border rounded-xl shadow-lg max-h-64 overflow-auto">
                   {filteredClients.map(client => (
                     <div
                       key={client.id}
-                      className="p-2 hover:bg-gray-100 cursor-pointer"
+                      className="p-4 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
                       onClick={() => {
                         setNewTransaction(prev => ({
                           ...prev,
@@ -420,178 +590,250 @@ export default function Home() {
                         setFormData(prev => ({ ...prev, searchTerm: '' }));
                       }}
                     >
-                      <div className="font-semibold">{client.name}</div>
-                      <div className="text-sm text-gray-600">{client.address}</div>
-                      <div className="text-sm text-gray-600">{client.phone}</div>
+                      <div className="font-semibold text-lg">{client.name}</div>
+                      <div className="text-gray-600">{client.address}</div>
+                      <div className="text-gray-600">{client.phone}</div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
+
             {/* Employee Selection */}
-            <select
-              className="w-full p-2 border rounded"
-              value={newTransaction.employee}
-              onChange={(e) =>
-                setNewTransaction((prev: NewTransactionType) => ({ ...prev, employee: e.target.value }))
-              }
-            >
-              <option value="">Seleccionar empleado</option>
-              <option value="employee1">Empleado 1</option>
-              <option value="employee2">Empleado 2</option>
-            </select>
-    
-            {/* Transaction Type */}
-            <select
-              className="w-full p-2 border rounded"
-              value={newTransaction.type}
-              onChange={(e) =>
-                setNewTransaction((prev: NewTransactionType) => ({
-                  ...prev,
-                  type: e.target.value as TransactionType,
-                }))
-              }
-            >
-              <option value="buy">Comprar</option>
-              <option value="sell">Vender</option>
-            </select>
-    
-            {/* Currency Selection */}
-            <select
-              className="w-full p-2 border rounded"
-              value={newTransaction.item}
-              onChange={(e) =>
-                setNewTransaction((prev: NewTransactionType) => ({
-                  ...prev,
-                  item: e.target.value as CurrencyType,
-                }))
-              }
-            >
-              <option value="dolares">Dólares</option>
-              <option value="euros">Euros</option>
-              <option value="reales">Reales</option>
-              <option value="pesos">Pesos</option>
-            </select>
-    
-            {/* Payment Selection */}
-            <select
-              className="w-full p-2 border rounded"
-              value={newTransaction.payment}
-              onChange={(e) =>
-                setNewTransaction((prev: NewTransactionType) => ({
-                  ...prev,
-                  payment: e.target.value as CurrencyType,
-                }))
-              }
-            >
-              <option value="pesos">Pesos</option>
-              <option value="dolares">Dólares</option>
-              <option value="euros">Euros</option>
-              <option value="reales">Reales</option>
-            </select>
-    
-            {/* Notes */}
-            <textarea
-              placeholder="Notas adicionales"
-              className="w-full p-2 border rounded"
-              value={formData.notes}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, notes: e.target.value }))
-              }
-            />
-    
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-              <button
-                onClick={handleCreateTransaction}
-                className="flex-1 bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-gray-300"
-                disabled={!newTransaction.client || !formData.amount || !newTransaction.employee}
+            <div>
+              <label className="block text-lg font-medium mb-2">Empleado</label>
+              <select
+                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
+                value={newTransaction.employee}
+                onChange={(e) =>
+                  setNewTransaction(prev => ({ ...prev, employee: e.target.value }))
+                }
               >
-                {editingOrder ? 'Guardar Cambios' : 'Crear Orden'}
-              </button>
-              {editingOrder && (
-                <button
-                  onClick={() => {
-                    setEditingOrder(null);
-                    setFormData({
-                      searchTerm: '',
-                      amount: '',
-                      paymentAmount: '',
-                      notes: '',
-                    });
-                    setNewTransaction({
-                      type: 'buy',
-                      item: 'dolares',
-                      amount: 0,
-                      payment: 'pesos',
-                      paymentAmount: 0,
-                      employee: '',
-                      client: null,
-                    });
-                  }}
-                  className="flex-1 bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
-                >
-                  Cancelar
-                </button>
-              )}
+                <option value="">Seleccionar empleado</option>
+                {employees.map(emp => (
+                  <option key={emp} value={emp}>{emp}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Transaction Type */}
+            <div>
+              <label className="block text-lg font-medium mb-2">Tipo de Operación</label>
+              <select
+                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
+                value={newTransaction.type}
+                onChange={(e) =>
+                  setNewTransaction(prev => ({
+                    ...prev,
+                    type: e.target.value as TransactionType,
+                  }))
+                }
+              >
+                <option value="buy">Comprar</option>
+                <option value="sell">Vender</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Currency Selection */}
+            <div>
+              <label className="block text-lg font-medium mb-2">Moneda</label>
+              <select
+                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
+                value={newTransaction.item}
+                onChange={(e) =>
+                  setNewTransaction(prev => ({
+                    ...prev,
+                    item: e.target.value as CurrencyType,
+                  }))
+                }
+              >
+                <option value="dolares">Dólares</option>
+                <option value="euros">Euros</option>
+                <option value="reales">Reales</option>
+                <option value="pesos">Pesos</option>
+              </select>
+            </div>
+
+            {/* Amount */}
+            <div>
+              <label className="block text-lg font-medium mb-2">Cantidad</label>
+              <input
+                type="number"
+                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
+                value={formData.amount}
+                onChange={(e) =>
+                  setFormData(prev => ({ ...prev, amount: e.target.value }))
+                }
+                placeholder="Ingrese cantidad"
+              />
+            </div>
+
+            {/* Payment Type */}
+            <div>
+              <label className="block text-lg font-medium mb-2">Método de Pago</label>
+              <select
+                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
+                value={newTransaction.payment}
+                onChange={(e) =>
+                  setNewTransaction(prev => ({
+                    ...prev,
+                    payment: e.target.value as CurrencyType,
+                  }))
+                }
+              >
+                <option value="pesos">Pesos</option>
+                <option value="dolares">Dólares</option>
+                <option value="euros">Euros</option>
+                <option value="reales">Reales</option>
+              </select>
             </div>
           </div>
         </div>
-    
-        {/* Pending Orders Section */}
-        <div className="bg-white shadow rounded p-4">
-          <h2 className="text-lg font-semibold mb-4">Órdenes Pendientes</h2>
-          <div className="space-y-4">
-            {transactions
-              .filter((t) => t.status === 'pending')
-              .map((transaction) => (
-                <div key={transaction.id} className="border p-3 rounded">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="font-semibold">{transaction.client!.name}</p>
-                      <p className="text-sm text-gray-600">{transaction.client!.address}</p>
-                      <p className="text-sm text-gray-600 mb-2">{transaction.client!.phone}</p>
-                      <p>
-                        {transaction.type === 'buy' ? 'Comprar' : 'Vender'}{' '}
-                        {transaction.amount} {transaction.item}
-                      </p>
-                      <p>
-                        Pago: {transaction.paymentAmount} {transaction.payment}
-                      </p>
-                      <p>Empleado: {transaction.employee}</p>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setEditingOrder(transaction);
-                        setFormData({
-                          searchTerm: '',
-                          amount: transaction.amount.toString(),
-                          paymentAmount: transaction.paymentAmount.toString(),
-                          notes: transaction.notes || '',
-                        });
-                        setNewTransaction({
-                          type: transaction.type,
-                          item: transaction.item,
-                          amount: transaction.amount,
-                          payment: transaction.payment,
-                          paymentAmount: transaction.paymentAmount,
-                          employee: transaction.employee,
-                          client: transaction.client,
-                        });
-                      }}
-                      className="bg-gray-100 text-gray-600 px-3 py-1 rounded hover:bg-gray-200"
-                    >
-                      Editar
-                    </button>
-                  </div>
-                </div>
-              ))}
-          </div>
+
+        {/* Notes */}
+        <div className="mt-8">
+          <label className="block text-lg font-medium mb-2">Notas</label>
+          <textarea
+            className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
+            value={formData.notes}
+            onChange={(e) =>
+              setFormData(prev => ({ ...prev, notes: e.target.value }))
+            }
+            rows={3}
+            placeholder="Agregar notas adicionales..."
+          />
         </div>
-      </>
-    );
-  }
-    
+
+        {/* Action Buttons */}
+        <div className="mt-8 flex gap-4">
+          <button
+            onClick={handleCreateTransaction}
+            className="flex-1 bg-gradient-to-br from-blue-600 to-blue-700 text-white py-4 px-8 
+                     rounded-xl text-xl font-semibold shadow-lg
+                     hover:from-blue-700 hover:to-blue-800 
+                     disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed
+                     transition-all duration-200"
+            disabled={!newTransaction.client || !formData.amount || !newTransaction.employee}
+          >
+            {editingOrder ? 'Guardar Cambios' : 'Crear Orden'}
+          </button>
+          {editingOrder && (
+            <button
+              onClick={() => {
+                setEditingOrder(null);
+                setFormData({
+                  searchTerm: '',
+                  amount: '',
+                  paymentAmount: '',
+                  notes: ''
+                });
+                setNewTransaction({
+                  type: 'buy',
+                  item: 'dolares',
+                  amount: 0,
+                  payment: 'pesos',
+                  paymentAmount: 0,
+                  employee: '',
+                  client: null
+                });
+              }}
+              className="flex-1 bg-gradient-to-br from-gray-500 to-gray-600 text-white py-4 px-8 
+                       rounded-xl text-xl font-semibold shadow-lg
+                       hover:from-gray-600 hover:to-gray-700
+                       transition-all duration-200"
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Pending Orders Section */}
+      <div className="bg-white shadow-xl rounded-xl p-8">
+        <h2 className="text-3xl font-bold mb-8 text-gray-800">Órdenes Pendientes</h2>
+        <div className="space-y-6">
+          {transactions
+            .filter((t) => t.status === 'pending')
+            .map((transaction) => (
+              <div key={transaction.id} 
+                   className="border-2 rounded-xl p-6 hover:shadow-lg transition-all duration-200
+                            bg-gradient-to-br from-white to-gray-50">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-2xl font-bold text-gray-800">{transaction.client!.name}</p>
+                      <p className="text-lg text-gray-600">{transaction.client!.address}</p>
+                      <p className="text-lg text-gray-600">{transaction.client!.phone}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-xl">
+                        <span className="font-medium">
+                          {transaction.type === 'buy' ? 'Comprar' : 'Vender'}:
+                        </span>{' '}
+                        <span className="font-bold">
+                          {transaction.amount} {transaction.item}
+                        </span>
+                      </p>
+                      <p className="text-xl">
+                        <span className="font-medium">Pago:</span>{' '}
+                        <span className="font-bold">
+                          {transaction.paymentAmount} {transaction.payment}
+                        </span>
+                      </p>
+                      <p className="text-lg text-gray-600">
+                        <span className="font-medium">Empleado:</span>{' '}
+                        {transaction.employee}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingOrder(transaction);
+                      setFormData({
+                        searchTerm: '',
+                        amount: transaction.amount.toString(),
+                        paymentAmount: transaction.paymentAmount.toString(),
+                        notes: transaction.notes || ''
+                      });
+                      setNewTransaction({
+                        type: transaction.type,
+                        item: transaction.item,
+                        amount: transaction.amount,
+                        payment: transaction.payment,
+                        paymentAmount: transaction.paymentAmount,
+                        employee: transaction.employee,
+                        client: transaction.client
+                      });
+                    }}
+                    className="bg-gradient-to-br from-blue-100 to-blue-200 text-blue-700 
+                             px-6 py-3 rounded-xl text-lg font-semibold
+                             hover:from-blue-200 hover:to-blue-300 
+                             transition-all duration-200 shadow-md"
+                  >
+                    Editar
+                  </button>
+                </div>
+                {transaction.notes && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-gray-700">{transaction.notes}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          {transactions.filter(t => t.status === 'pending').length === 0 && (
+            <div className="text-center py-12 text-gray-500 text-xl">
+              No hay órdenes pendientes
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
   function EmployeeView({
     rates,
     transactions,
@@ -1377,13 +1619,15 @@ export default function Home() {
   }, [transactions, inventory]);
 
   return (
-  <main className="p-4 max-w-2xl mx-auto">
+  <main className="p-4 max-w-6xl mx-auto">
     <div className="flex justify-between items-center mb-6">
       <h1 className="text-2xl font-bold">Blue Eyes</h1>
-      <div className="flex gap-2">
+      <div className="flex gap-4">
         <button
           onClick={() => setView('orders')}
-          className={`px-4 py-2 rounded ${view === 'orders' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+          className={`px-6 py-3 rounded-lg text-lg font-medium transition-colors ${
+            view === 'orders' ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
         >
           Órdenes
         </button>
