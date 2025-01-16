@@ -394,321 +394,327 @@ export default function Home() {
     }, [formData.amount, newTransaction.item, newTransaction.payment, newTransaction.type, calculatePaymentAmount]);
   
     return (
-      <div className="space-y-8">
-        {/* Exchange Rates Section */}
-          <div className="bg-white shadow-xl rounded-xl p-8">
-            <h2 className="text-3xl font-bold mb-8 text-gray-800">Tasas de Cambio</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Dólar a Peso */}
-              <div className="p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
-                <h3 className="text-2xl font-bold mb-4">Dólar a Peso</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-lg font-medium mb-2">Compra</label>
-                    <input
-                      type="number"
-                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      value={rates.dolarToPeso.buy}
-                      onChange={(e) => onRatesChange({
+      <div className="mb-4 space-y-2 max-w-sm">
+{/* Exchange Rate Input */}
+<div className="p-4 bg-blue-50 rounded-lg">
+  <h3 className="text-lg font-semibold mb-2">Dólar a Peso</h3>
+  <div className="flex justify-between gap-4">
+    <div className="flex-1">
+      <label className="text-sm">Compra</label>
+      <input
+        type="text"
+        className="w-full p-2 text-right border rounded"
+        value={rates.dolarToPeso.buy === 0 ? '' : rates.dolarToPeso.buy}
+        onChange={(e) => {
+          const value = e.target.value;
+          if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            onRatesChange({
+              ...rates,
+              dolarToPeso: {
+                ...rates.dolarToPeso,
+                buy: value === '' ? 0 : parseFloat(value)
+              }
+            });
+          }
+        }}
+      />
+    </div>
+    <div className="flex-1">
+      <label className="text-sm">Venta</label>
+      <input
+        type="text"
+        className="w-full p-2 text-right border rounded"
+        value={rates.dolarToPeso.sell === 0 ? '' : rates.dolarToPeso.sell}
+        onChange={(e) => {
+          const value = e.target.value;
+          if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            onRatesChange({
+              ...rates,
+              dolarToPeso: {
+                ...rates.dolarToPeso,
+                sell: value === '' ? 0 : parseFloat(value)
+              }
+            });
+          }
+        }}
+      />
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+        {/* Dólar */}
+          <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">Dólar:</span>
+                <div className="flex gap-2">
+                  <input
+                    type="text" // Changed from number to text
+                    inputMode="decimal" // Better mobile experience
+                    className="w-20 p-1 text-sm border rounded text-right"
+                    placeholder="Compra"
+                    value={rates.dolarToPeso.buy.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d.]/g, '');
+                      onRatesChange({
                         ...rates,
                         dolarToPeso: {
                           ...rates.dolarToPeso,
-                          buy: parseFloat(e.target.value) || 0
+                          buy: value === '' ? 0 : parseFloat(value)
                         }
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-lg font-medium mb-2">Venta</label>
-                    <input
-                      type="number"
-                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      value={rates.dolarToPeso.sell}
-                      onChange={(e) => onRatesChange({
+                      });
+                    }}
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-20 p-1 text-sm border rounded text-right"
+                    placeholder="Venta"
+                    value={rates.dolarToPeso.sell}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d.]/g, '');
+                      onRatesChange({
                         ...rates,
-                        dolarToPeso: {
-                          ...rates.dolarToPeso,
-                          sell: parseFloat(e.target.value) || 0
-                        }
-                      })}
-                    />
-                  </div>
+                        dolarToPeso: { ...rates.dolarToPeso, sell: parseFloat(value) || 0 }
+                      });
+                    }}
+                  />
                 </div>
               </div>
-
-              {/* Euro a Dólar */}
-              <div className="p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200">
-                <h3 className="text-2xl font-bold mb-4">Euro a Dólar</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-lg font-medium mb-2">Compra</label>
-                    <input
-                      type="number"
-                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-green-500"
-                      value={rates.euroToDolar.buy}
-                      onChange={(e) => onRatesChange({
+            </div>
+            {/* Euro */}
+          <div className="bg-green-50 p-3 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">Euro:</span>
+                <div className="flex gap-2">
+                  <input
+                    type="text" // Changed from number to text
+                    inputMode="decimal" // Better mobile experience
+                    className="w-20 p-1 text-sm border rounded text-right"
+                    placeholder="Compra"
+                    value={rates.euroToDolar.buy.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d.]/g, '');
+                      onRatesChange({
                         ...rates,
                         euroToDolar: {
                           ...rates.euroToDolar,
-                          buy: parseFloat(e.target.value) || 0
+                          buy: value === '' ? 0 : parseFloat(value)
                         }
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-lg font-medium mb-2">Venta</label>
-                    <input
-                      type="number"
-                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-green-500"
-                      value={rates.euroToDolar.sell}
-                      onChange={(e) => onRatesChange({
+                      });
+                    }}
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-20 p-1 text-sm border rounded text-right"
+                    placeholder="Venta"
+                    value={rates.euroToDolar.sell}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d.]/g, '');
+                      onRatesChange({
                         ...rates,
-                        euroToDolar: {
-                          ...rates.euroToDolar,
-                          sell: parseFloat(e.target.value) || 0
-                        }
-                      })}
-                    />
-                  </div>
+                        euroToDolar: { ...rates.euroToDolar, sell: parseFloat(value) || 0 }
+                      });
+                    }}
+                  />
                 </div>
               </div>
+            </div>
 
-              {/* Real a Dólar */}
-              <div className="p-6 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200">
-                <h3 className="text-2xl font-bold mb-4">Real a Dólar</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-lg font-medium mb-2">Compra</label>
-                    <input
-                      type="number"
-                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                      value={rates.realToDolar.buy}
-                      onChange={(e) => onRatesChange({
-                        ...rates,
-                        realToDolar: {
-                          ...rates.realToDolar,
-                          buy: parseFloat(e.target.value) || 0
-                        }
-                      })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-lg font-medium mb-2">Venta</label>
-                    <input
-                      type="number"
-                      className="w-full p-3 text-2xl font-bold text-right border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                      value={rates.realToDolar.sell}
-                      onChange={(e) => onRatesChange({
+            {/* Real */}
+          <div className="bg-yellow-50 p-3 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-sm">Real:</span>
+                <div className="flex gap-2">
+                  <input
+                    type="text" // Changed from number to text
+                    inputMode="decimal" // Better mobile experience
+                    className="w-20 p-1 text-sm border rounded text-right"
+                    placeholder="Compra"
+                    value={rates.realToDolar.buy.toString()}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d.]/g, '');
+                      onRatesChange({
                         ...rates,
                         realToDolar: {
                           ...rates.realToDolar,
-                          sell: parseFloat(e.target.value) || 0
+                          buy: value === '' ? 0 : parseFloat(value)
                         }
-                      })}
-                    />
-                  </div>
+                      });
+                    }}
+                  />
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="w-20 p-1 text-sm border rounded text-right"
+                    placeholder="Venta"
+                    value={rates.realToDolar.sell}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d.]/g, '');
+                      onRatesChange({
+                        ...rates,
+                        realToDolar: { ...rates.realToDolar, sell: parseFloat(value) || 0 }
+                      });
+                    }}
+                  />
                 </div>
               </div>
             </div>
+
+{/* New Order Section - Reorganized */}
+<div className="bg-white shadow rounded-lg p-4">
+  {/* Client and Employee Row */}
+  <div className="grid grid-cols-2 gap-4 mb-4">
+    {/* Client Selection */}
+<div className="relative">
+  <label className="block text-sm font-medium mb-1">Cliente</label>
+  <div className="relative">
+    <input
+      type="text"
+      placeholder="Buscar cliente..."
+      className="w-full p-2 border rounded"
+      value={newTransaction.client ? `${newTransaction.client.name} - ${newTransaction.client.phone}` : formData.searchTerm}
+      onChange={(e) => {
+        if (!newTransaction.client) {
+          setFormData(prev => ({ ...prev, searchTerm: e.target.value }));
+        }
+      }}
+      onFocus={() => {
+        if (newTransaction.client) {
+          setNewTransaction(prev => ({ ...prev, client: null }));
+          setFormData(prev => ({ ...prev, searchTerm: '' }));
+        }
+      }}
+    />
+    {formData.searchTerm && !newTransaction.client && filteredClients.length > 0 && (
+      <div className="absolute z-50 w-full mt-1 bg-white border rounded shadow-lg max-h-48 overflow-auto">
+        {filteredClients.map(client => (
+          <div
+            key={client.id}
+            className="p-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
+            onClick={() => {
+              setNewTransaction(prev => ({ ...prev, client }));
+              setFormData(prev => ({ ...prev, searchTerm: '' }));
+            }}
+          >
+            <div className="font-medium">{client.name}</div>
+            <div className="text-sm text-gray-600">{client.phone}</div>
           </div>
-  
-         {/* New Order Section */}
-      <div className="bg-white shadow-xl rounded-xl p-8">
-        <h2 className="text-3xl font-bold mb-8 text-gray-800">
-          {editingOrder ? 'Editar Orden' : 'Nueva Orden'}
-        </h2>
+        ))}
+      </div>
+    )}
+  </div>
+</div>
+    <div>
+      <label className="block text-sm font-medium mb-1">Empleado</label>
+      <select
+        className="w-full p-2 border rounded-lg"
+        value={newTransaction.employee}
+        onChange={(e) => setNewTransaction(prev => ({ ...prev, employee: e.target.value }))}
+      >
+        <option value="">Seleccionar empleado</option>
+        {employees.map(emp => (
+          <option key={emp} value={emp}>{emp}</option>
+        ))}
+      </select>
+    </div>
+  </div>
 
-        {/* Operation Summary Box */}
-        {formData.amount && calculatedPaymentAmount > 0 && (
-          <div className="mb-8 p-6 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl border-2 border-blue-300">
-            <h3 className="text-2xl font-bold mb-4 text-blue-900">Resumen de la Operación</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xl">
-              <div className="space-y-3">
-                <p className="flex justify-between">
-                  <span className="font-medium">Operación:</span>
-                  <span className="font-bold">
-                    {newTransaction.type === 'buy' ? 'Compra' : 'Venta'}
-                  </span>
-                </p>
-                <p className="flex justify-between">
-                  <span className="font-medium">Cantidad:</span>
-                  <span className="font-bold">
-                    {formData.amount} {newTransaction.item}
-                  </span>
-                </p>
-              </div>
-              <div className="space-y-3">
-                <p className="flex justify-between">
-                  <span className="font-medium">
-                    {newTransaction.type === 'buy' ? 'A pagar' : 'A recibir'}:
-                  </span>
-                  <span className="font-bold text-blue-800">
-                    {calculatedPaymentAmount.toLocaleString('es-AR', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    })} {newTransaction.payment}
-                  </span>
-                </p>
-                <p className="flex justify-between text-blue-700">
-                  <span className="font-medium">Tasa efectiva:</span>
-                  <span className="font-bold">
-                    {(calculatedPaymentAmount / Number(formData.amount)).toLocaleString('es-AR', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2
-                    })} {newTransaction.payment}/{newTransaction.item}
-                  </span>
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+  {/* Transaction Type */}
+  <div className="mb-4">
+    <label className="block text-sm font-medium mb-1">Tipo de Operación</label>
+    <select
+      className="w-full p-2 border rounded-lg"
+      value={newTransaction.type}
+      onChange={(e) => setNewTransaction(prev => ({
+        ...prev,
+        type: e.target.value as TransactionType,
+      }))}
+    >
+      <option value="buy">Comprar</option>
+      <option value="sell">Vender</option>
+    </select>
+  </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Left Column */}
-          <div className="space-y-6">
-            {/* Client Selection */}
-            <div className="relative">
-              <label className="block text-lg font-medium mb-2">Cliente</label>
-              <input
-                type="text"
-                placeholder="Buscar cliente..."
-                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
-                value={formData.searchTerm}
-                onChange={e => setFormData(prev => ({ ...prev, searchTerm: e.target.value }))}
-              />
-              {formData.searchTerm && (
-                <div className="absolute z-10 w-full mt-2 bg-white border rounded-xl shadow-lg max-h-64 overflow-auto">
-                  {filteredClients.map(client => (
-                    <div
-                      key={client.id}
-                      className="p-4 hover:bg-blue-50 cursor-pointer border-b last:border-b-0"
-                      onClick={() => {
-                        setNewTransaction(prev => ({
-                          ...prev,
-                          client: client
-                        }));
-                        setFormData(prev => ({ ...prev, searchTerm: '' }));
-                      }}
-                    >
-                      <div className="font-semibold text-lg">{client.name}</div>
-                      <div className="text-gray-600">{client.address}</div>
-                      <div className="text-gray-600">{client.phone}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+  {/* Currency Exchange Row */}
+  <div className="grid grid-cols-2 gap-4 mb-4">
+    <div>
+      <label className="block text-sm font-medium mb-1">Moneda</label>
+      <select
+        className="w-full p-2 border rounded-lg"
+        value={newTransaction.item}
+        onChange={(e) => setNewTransaction(prev => ({
+          ...prev,
+          item: e.target.value as CurrencyType,
+        }))}
+      >
+        <option value="dolares">Dólares</option>
+        <option value="euros">Euros</option>
+        <option value="reales">Reales</option>
+        <option value="pesos">Pesos</option>
+      </select>
+      <input
+        type="text"
+        inputMode="decimal"
+        className="w-full mt-2 p-2 border rounded-lg"
+        value={formData.amount}
+        onChange={(e) => {
+          const value = e.target.value.replace(/[^\d.]/g, '');
+          setFormData(prev => ({ ...prev, amount: value }))
+        }}
+        placeholder="Cantidad"
+      />
+    </div>
 
-            {/* Employee Selection */}
-            <div>
-              <label className="block text-lg font-medium mb-2">Empleado</label>
-              <select
-                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
-                value={newTransaction.employee}
-                onChange={(e) =>
-                  setNewTransaction(prev => ({ ...prev, employee: e.target.value }))
-                }
-              >
-                <option value="">Seleccionar empleado</option>
-                {employees.map(emp => (
-                  <option key={emp} value={emp}>{emp}</option>
-                ))}
-              </select>
-            </div>
+    <div>
+      <label className="block text-sm font-medium mb-1">Pago</label>
+      <select
+        className="w-full p-2 border rounded-lg"
+        value={newTransaction.payment}
+        onChange={(e) => setNewTransaction(prev => ({
+          ...prev,
+          payment: e.target.value as CurrencyType,
+        }))}
+      >
+        <option value="pesos">Pesos</option>
+        <option value="dolares">Dólares</option>
+        <option value="euros">Euros</option>
+        <option value="reales">Reales</option>
+      </select>
+      <input
+        type="text"
+        inputMode="decimal"
+        className="w-full mt-2 p-2 border rounded-lg bg-gray-50"
+        value={calculatedPaymentAmount > 0 ? calculatedPaymentAmount.toFixed(2) : ''}
+        onChange={(e) => {
+          const value = e.target.value.replace(/[^\d.]/g, '');
+          setCalculatedPaymentAmount(parseFloat(value) || 0);
+        }}
+        placeholder="Monto calculado/manual"
+      />
+    </div>
+  </div>
 
-            {/* Transaction Type */}
-            <div>
-              <label className="block text-lg font-medium mb-2">Tipo de Operación</label>
-              <select
-                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
-                value={newTransaction.type}
-                onChange={(e) =>
-                  setNewTransaction(prev => ({
-                    ...prev,
-                    type: e.target.value as TransactionType,
-                  }))
-                }
-              >
-                <option value="buy">Comprar</option>
-                <option value="sell">Vender</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            {/* Currency Selection */}
-            <div>
-              <label className="block text-lg font-medium mb-2">Moneda</label>
-              <select
-                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
-                value={newTransaction.item}
-                onChange={(e) =>
-                  setNewTransaction(prev => ({
-                    ...prev,
-                    item: e.target.value as CurrencyType,
-                  }))
-                }
-              >
-                <option value="dolares">Dólares</option>
-                <option value="euros">Euros</option>
-                <option value="reales">Reales</option>
-                <option value="pesos">Pesos</option>
-              </select>
-            </div>
-
-            {/* Amount */}
-            <div>
-              <label className="block text-lg font-medium mb-2">Cantidad</label>
-              <input
-                type="number"
-                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
-                value={formData.amount}
-                onChange={(e) =>
-                  setFormData(prev => ({ ...prev, amount: e.target.value }))
-                }
-                placeholder="Ingrese cantidad"
-              />
-            </div>
-
-            {/* Payment Type */}
-            <div>
-              <label className="block text-lg font-medium mb-2">Método de Pago</label>
-              <select
-                className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
-                value={newTransaction.payment}
-                onChange={(e) =>
-                  setNewTransaction(prev => ({
-                    ...prev,
-                    payment: e.target.value as CurrencyType,
-                  }))
-                }
-              >
-                <option value="pesos">Pesos</option>
-                <option value="dolares">Dólares</option>
-                <option value="euros">Euros</option>
-                <option value="reales">Reales</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Notes */}
-        <div className="mt-8">
-          <label className="block text-lg font-medium mb-2">Notas</label>
-          <textarea
-            className="w-full p-4 text-lg border rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500"
-            value={formData.notes}
-            onChange={(e) =>
-              setFormData(prev => ({ ...prev, notes: e.target.value }))
-            }
-            rows={3}
-            placeholder="Agregar notas adicionales..."
-          />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="mt-8 flex gap-4">
+  {/* Notes */}
+  <div className="mb-4">
+    <label className="block text-sm font-medium mb-1">Notas</label>
+    <textarea
+      className="w-full p-2 border rounded-lg"
+      value={formData.notes}
+      onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+      rows={2}
+      placeholder="Agregar notas adicionales..."
+    />
+  </div>
+  {/* Action Buttons */}
+  <div className="mt-8 flex gap-4">
           <button
             onClick={handleCreateTransaction}
             className="flex-1 bg-gradient-to-br from-blue-600 to-blue-700 text-white py-4 px-8 
@@ -749,7 +755,7 @@ export default function Home() {
             </button>
           )}
         </div>
-      </div>
+</div>
 
       {/* Pending Orders Section */}
       <div className="bg-white shadow-xl rounded-xl p-8">
