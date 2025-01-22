@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx'
 import { generateTestData } from './testData'
 import { isAfter, subMonths } from 'date-fns'
 import { useCallback } from 'react';
+import SimpleExchangeRates from './exchange-rates';
 
 const SHOW_TEST_BUTTON = process.env.NODE_ENV === 'development';
 
@@ -395,205 +396,53 @@ export default function Home() {
   
     return (
       <div className="mb-4 space-y-2 max-w-sm">
+
+
 {/* Exchange Rate Input */}
-<div className="p-4 bg-blue-50 rounded-lg">
-  <h3 className="text-lg font-semibold mb-2">Dólar a Peso</h3>
-  <div className="flex justify-between gap-4">
-    <div className="flex-1">
-      <label className="text-sm">Compra</label>
-      <input
-        type="text"
-        className="w-full p-2 text-right border rounded"
-        value={rates.dolarToPeso.buy === 0 ? '' : rates.dolarToPeso.buy}
-        onChange={(e) => {
-          const value = e.target.value;
-          if (value === '' || /^\d*\.?\d*$/.test(value)) {
-            onRatesChange({
-              ...rates,
-              dolarToPeso: {
-                ...rates.dolarToPeso,
-                buy: value === '' ? 0 : parseFloat(value)
-              }
-            });
-          }
-        }}
-      />
-    </div>
-    <div className="flex-1">
-      <label className="text-sm">Venta</label>
-      <input
-        type="text"
-        className="w-full p-2 text-right border rounded"
-        value={rates.dolarToPeso.sell === 0 ? '' : rates.dolarToPeso.sell}
-        onChange={(e) => {
-          const value = e.target.value;
-          if (value === '' || /^\d*\.?\d*$/.test(value)) {
-            onRatesChange({
-              ...rates,
-              dolarToPeso: {
-                ...rates.dolarToPeso,
-                sell: value === '' ? 0 : parseFloat(value)
-              }
-            });
-          }
-        }}
-      />
-    </div>
-  </div>
-</div>
-
-
-
-
-
-
-
-
-        {/* Dólar */}
-          <div className="bg-blue-50 p-3 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-sm">Dólar:</span>
-                <div className="flex gap-2">
-                  <input
-                    type="text" // Changed from number to text
-                    inputMode="decimal" // Better mobile experience
-                    className="w-20 p-1 text-sm border rounded text-right"
-                    placeholder="Compra"
-                    value={rates.dolarToPeso.buy.toString()}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d.]/g, '');
-                      onRatesChange({
-                        ...rates,
-                        dolarToPeso: {
-                          ...rates.dolarToPeso,
-                          buy: value === '' ? 0 : parseFloat(value)
-                        }
-                      });
-                    }}
-                  />
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    className="w-20 p-1 text-sm border rounded text-right"
-                    placeholder="Venta"
-                    value={rates.dolarToPeso.sell}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d.]/g, '');
-                      onRatesChange({
-                        ...rates,
-                        dolarToPeso: { ...rates.dolarToPeso, sell: parseFloat(value) || 0 }
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-            {/* Euro */}
-          <div className="bg-green-50 p-3 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-sm">Euro:</span>
-                <div className="flex gap-2">
-                  <input
-                    type="text" // Changed from number to text
-                    inputMode="decimal" // Better mobile experience
-                    className="w-20 p-1 text-sm border rounded text-right"
-                    placeholder="Compra"
-                    value={rates.euroToDolar.buy.toString()}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d.]/g, '');
-                      onRatesChange({
-                        ...rates,
-                        euroToDolar: {
-                          ...rates.euroToDolar,
-                          buy: value === '' ? 0 : parseFloat(value)
-                        }
-                      });
-                    }}
-                  />
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    className="w-20 p-1 text-sm border rounded text-right"
-                    placeholder="Venta"
-                    value={rates.euroToDolar.sell}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d.]/g, '');
-                      onRatesChange({
-                        ...rates,
-                        euroToDolar: { ...rates.euroToDolar, sell: parseFloat(value) || 0 }
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Real */}
-          <div className="bg-yellow-50 p-3 rounded-lg">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-sm">Real:</span>
-                <div className="flex gap-2">
-                  <input
-                    type="text" // Changed from number to text
-                    inputMode="decimal" // Better mobile experience
-                    className="w-20 p-1 text-sm border rounded text-right"
-                    placeholder="Compra"
-                    value={rates.realToDolar.buy.toString()}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d.]/g, '');
-                      onRatesChange({
-                        ...rates,
-                        realToDolar: {
-                          ...rates.realToDolar,
-                          buy: value === '' ? 0 : parseFloat(value)
-                        }
-                      });
-                    }}
-                  />
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    className="w-20 p-1 text-sm border rounded text-right"
-                    placeholder="Venta"
-                    value={rates.realToDolar.sell}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d.]/g, '');
-                      onRatesChange({
-                        ...rates,
-                        realToDolar: { ...rates.realToDolar, sell: parseFloat(value) || 0 }
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
+<SimpleExchangeRates 
+  rates={rates}
+  onRatesChange={onRatesChange}
+  editable={true}
+/>
 
 {/* New Order Section - Reorganized */}
 <div className="bg-white shadow rounded-lg p-4">
   {/* Client and Employee Row */}
   <div className="grid grid-cols-2 gap-4 mb-4">
-    {/* Client Selection */}
+    {/* Client Selection - Fixed Version */}
 <div className="relative">
   <label className="block text-sm font-medium mb-1">Cliente</label>
   <div className="relative">
-    <input
-      type="text"
-      placeholder="Buscar cliente..."
-      className="w-full p-2 border rounded"
-      value={newTransaction.client ? `${newTransaction.client.name} - ${newTransaction.client.phone}` : formData.searchTerm}
-      onChange={(e) => {
-        if (!newTransaction.client) {
-          setFormData(prev => ({ ...prev, searchTerm: e.target.value }));
-        }
-      }}
-      onFocus={() => {
-        if (newTransaction.client) {
-          setNewTransaction(prev => ({ ...prev, client: null }));
-          setFormData(prev => ({ ...prev, searchTerm: '' }));
-        }
-      }}
-    />
-    {formData.searchTerm && !newTransaction.client && filteredClients.length > 0 && (
+    {newTransaction.client ? (
+      // Selected client display
+      <div className="w-full p-2 border rounded bg-blue-50 flex justify-between items-center">
+        <div>
+          <span className="font-medium">{newTransaction.client.name}</span>
+          <span className="text-sm text-gray-600 ml-2">{newTransaction.client.phone}</span>
+        </div>
+        <button
+          className="text-gray-500 hover:text-red-500"
+          onClick={() => {
+            setNewTransaction(prev => ({ ...prev, client: null }));
+            setFormData(prev => ({ ...prev, searchTerm: '' }));
+          }}
+        >
+          ✕
+        </button>
+      </div>
+    ) : (
+      // Search input
+      <input
+        type="text"
+        placeholder="Buscar cliente..."
+        className="w-full p-2 border rounded"
+        value={formData.searchTerm}
+        onChange={(e) => setFormData(prev => ({ ...prev, searchTerm: e.target.value }))}
+      />
+    )}
+    
+    {/* Dropdown for search results */}
+    {!newTransaction.client && formData.searchTerm && filteredClients.length > 0 && (
       <div className="absolute z-50 w-full mt-1 bg-white border rounded shadow-lg max-h-48 overflow-auto">
         {filteredClients.map(client => (
           <div
