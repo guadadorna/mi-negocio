@@ -64,9 +64,9 @@ const SimpleExchangeRates = ({
   const handleChange = (currency: keyof ExchangeRates, type: keyof Rate, value: string) => {
     if (!editable) return;
     
-    // Allow empty string, numbers and decimal point
-    if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;
-
+    // Allow empty string, numbers, dots and commas
+    if (value !== '' && !/^\d*[.,]?\d*$/.test(value)) return;
+  
     setLocalRates(prev => ({
       ...prev,
       [currency]: {
@@ -109,11 +109,17 @@ const SimpleExchangeRates = ({
             <input
               type="text"
               inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
               className={`w-full p-2 text-right border rounded ${
                 editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
               }`}
               value={localRates.dolarToPeso.buy}
-              onChange={e => handleChange('dolarToPeso', 'buy', e.target.value)}
+              onChange={e => {
+                // Convert comma to dot if needed
+                const value = e.target.value.replace(',', '.');
+                handleChange('dolarToPeso', 'buy', value);
+              }}
               onBlur={() => handleBlur('dolarToPeso', 'buy')}
               readOnly={!editable}
             />
@@ -123,11 +129,17 @@ const SimpleExchangeRates = ({
             <input
               type="text"
               inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
               className={`w-full p-2 text-right border rounded ${
                 editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
               }`}
               value={localRates.dolarToPeso.sell}
-              onChange={e => handleChange('dolarToPeso', 'sell', e.target.value)}
+              onChange={e => {
+                // Convert comma to dot if needed
+                const value = e.target.value.replace(',', '.');
+                handleChange('dolarToPeso', 'sell', value);
+              }}
               onBlur={() => handleBlur('dolarToPeso', 'sell')}
               readOnly={!editable}
             />
@@ -144,11 +156,17 @@ const SimpleExchangeRates = ({
             <input
               type="text"
               inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
               className={`w-full p-2 text-right border rounded ${
                 editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
               }`}
               value={localRates.euroToDolar.buy}
-              onChange={e => handleChange('euroToDolar', 'buy', e.target.value)}
+              onChange={e => {
+                // Convert comma to dot if needed
+                const value = e.target.value.replace(',', '.');
+                handleChange('euroToDolar', 'buy', value);
+              }}
               onBlur={() => handleBlur('euroToDolar', 'buy')}
               readOnly={!editable}
             />
@@ -158,11 +176,17 @@ const SimpleExchangeRates = ({
             <input
               type="text"
               inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
               className={`w-full p-2 text-right border rounded ${
                 editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
               }`}
               value={localRates.euroToDolar.sell}
-              onChange={e => handleChange('euroToDolar', 'sell', e.target.value)}
+              onChange={e => {
+                // Convert comma to dot if needed
+                const value = e.target.value.replace(',', '.');
+                handleChange('euroToDolar', 'sell', value);
+              }}
               onBlur={() => handleBlur('euroToDolar', 'sell')}
               readOnly={!editable}
             />
@@ -179,11 +203,17 @@ const SimpleExchangeRates = ({
             <input
               type="text"
               inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
               className={`w-full p-2 text-right border rounded ${
                 editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
               }`}
               value={localRates.realToDolar.buy}
-              onChange={e => handleChange('realToDolar', 'buy', e.target.value)}
+              onChange={e => {
+                // Convert comma to dot if needed
+                const value = e.target.value.replace(',', '.');
+                handleChange('realToDolar', 'buy', value);
+              }}
               onBlur={() => handleBlur('realToDolar', 'buy')}
               readOnly={!editable}
             />
@@ -193,11 +223,17 @@ const SimpleExchangeRates = ({
             <input
               type="text"
               inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
               className={`w-full p-2 text-right border rounded ${
                 editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
               }`}
               value={localRates.realToDolar.sell}
-              onChange={e => handleChange('realToDolar', 'sell', e.target.value)}
+              onChange={e => {
+                // Convert comma to dot if needed
+                const value = e.target.value.replace(',', '.');
+                handleChange('realToDolar', 'sell', value);
+              }}
               onBlur={() => handleBlur('realToDolar', 'sell')}
               readOnly={!editable}
             />
