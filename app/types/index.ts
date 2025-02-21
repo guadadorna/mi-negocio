@@ -14,18 +14,23 @@ export type NewTransactionType = {
 
 export type Transaction = {
   id: number;
-  type: TransactionType;  // Changed this line
+  type: TransactionType;
   item: CurrencyType;
   amount: number;
   payment: CurrencyType;
   paymentAmount: number;
   employee: string;
   client: Client | null;
-  status: OrderStatus;  // Using OrderStatus type
+  status: OrderStatus;
   delayedBy?: string;
   pendingPayment?: { amount: number; currency: CurrencyType };
   notes?: string;
   paymentCollector?: string;
+  created_at?: string;        // Add this field
+  completed_at?: string;      // Add this field
+  archive_date?: string;      // Add this field
+  archived?: boolean;         // Add this field
+  archive_filename?: string;  // Add this field
 };
 
 

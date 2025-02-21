@@ -99,9 +99,11 @@ const SimpleExchangeRates = ({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="w-full">
+      {/* Mobile View */}
+      <div className="block md:hidden space-y-4">
       {/* Dólar a Peso */}
-      <div className="bg-blue-50 p-4 rounded-lg">
+      <div className="bg-blue-50 p-4 rounded-lg w-full">
         <h3 className="text-lg font-semibold mb-3">Dólar a Peso</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -148,7 +150,7 @@ const SimpleExchangeRates = ({
       </div>
 
       {/* Euro a Dólar */}
-      <div className="bg-green-50 p-4 rounded-lg">
+      <div className="bg-green-50 p-4 rounded-lg w-full">
         <h3 className="text-lg font-semibold mb-3">Euro a Dólar</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -195,7 +197,7 @@ const SimpleExchangeRates = ({
       </div>
 
       {/* Real a Dólar */}
-      <div className="bg-yellow-50 p-4 rounded-lg">
+      <div className="bg-yellow-50 p-4 rounded-lg w-full">
         <h3 className="text-lg font-semibold mb-3">Real a Dólar</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -241,7 +243,145 @@ const SimpleExchangeRates = ({
         </div>
       </div>
     </div>
-  );
+{/* Desktop View - Updated for wider boxes */}
+<div className="hidden md:grid md:grid-cols-3 gap-6 w-full min-w-[900px]">
+      {/* Dólar a Peso */}
+      <div className="bg-blue-50 p-6 rounded-lg w-full min-w-[280px]">
+        <h3 className="text-xl font-semibold mb-4">Dólar a Peso</h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-2">Compra</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
+              className={`w-full p-3 text-right border rounded text-lg ${
+                editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
+              }`}
+              value={localRates.dolarToPeso.buy}
+              onChange={e => {
+                const value = e.target.value.replace(',', '.');
+                handleChange('dolarToPeso', 'buy', value);
+              }}
+              onBlur={() => handleBlur('dolarToPeso', 'buy')}
+              readOnly={!editable}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Venta</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
+              className={`w-full p-3 text-right border rounded text-lg ${
+                editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
+              }`}
+              value={localRates.dolarToPeso.sell}
+              onChange={e => {
+                const value = e.target.value.replace(',', '.');
+                handleChange('dolarToPeso', 'sell', value);
+              }}
+              onBlur={() => handleBlur('dolarToPeso', 'sell')}
+              readOnly={!editable}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Euro a Dólar */}
+      <div className="bg-green-50 p-6 rounded-lg w-full min-w-[280px]">
+        <h3 className="text-xl font-semibold mb-4">Euro a Dólar</h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-2">Compra</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
+              className={`w-full p-3 text-right border rounded text-lg ${
+                editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
+              }`}
+              value={localRates.euroToDolar.buy}
+              onChange={e => {
+                const value = e.target.value.replace(',', '.');
+                handleChange('euroToDolar', 'buy', value);
+              }}
+              onBlur={() => handleBlur('euroToDolar', 'buy')}
+              readOnly={!editable}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Venta</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
+              className={`w-full p-3 text-right border rounded text-lg ${
+                editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
+              }`}
+              value={localRates.euroToDolar.sell}
+              onChange={e => {
+                const value = e.target.value.replace(',', '.');
+                handleChange('euroToDolar', 'sell', value);
+              }}
+              onBlur={() => handleBlur('euroToDolar', 'sell')}
+              readOnly={!editable}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Real a Dólar */}
+      <div className="bg-yellow-50 p-6 rounded-lg w-full min-w-[280px]">
+        <h3 className="text-xl font-semibold mb-4">Real a Dólar</h3>
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium mb-2">Compra</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
+              className={`w-full p-3 text-right border rounded text-lg ${
+                editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
+              }`}
+              value={localRates.realToDolar.buy}
+              onChange={e => {
+                const value = e.target.value.replace(',', '.');
+                handleChange('realToDolar', 'buy', value);
+              }}
+              onBlur={() => handleBlur('realToDolar', 'buy')}
+              readOnly={!editable}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Venta</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9]*[.,]?[0-9]*"
+              step="0.01"
+              className={`w-full p-3 text-right border rounded text-lg ${
+                editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
+              }`}
+              value={localRates.realToDolar.sell}
+              onChange={e => {
+                const value = e.target.value.replace(',', '.');
+                handleChange('realToDolar', 'sell', value);
+              }}
+              onBlur={() => handleBlur('realToDolar', 'sell')}
+              readOnly={!editable}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 };
 
 export default SimpleExchangeRates;
