@@ -1,4 +1,4 @@
-export type TransactionType = 'buy' | 'sell' | 'manual';
+export type TransactionType = 'buy' | 'sell' | 'manual' | 'extraccion';
 export type OrderStatus = 'pending' | 'completed' | 'cancelled' | 'payment_delayed';
 export type CurrencyType = 'dolares' | 'euros' | 'reales' | 'pesos';
 
@@ -10,7 +10,9 @@ export type NewTransactionType = {
   paymentAmount: number;
   employee: string;
   client: Client | null;
+  extractionEmployee?: string; // New field for extraction transactions
 };
+
 
 export type Transaction = {
   id: number;
@@ -42,7 +44,7 @@ export type Client = {
 }
 
 
-export type View = 'orders' | 'clients' | 'employees' | 'inventory' | 'history';
+export type View = 'orders' | 'clients' | 'employees' | 'inventory' | 'history' | 'analysis';
 
 export type ExchangeRates = {
   dolarToPeso: { buy: number; sell: number };

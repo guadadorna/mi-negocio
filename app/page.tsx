@@ -703,7 +703,7 @@ export default function Home() {
                   type="text"
                   inputMode="decimal"
                   className="w-full mt-2 p-2 border rounded-lg"
-                  value={formData.amount}
+                  value={formData.amount ? Number(formData.amount).toLocaleString('en-US') : ''}
                   onChange={(e) => {
                     const value = e.target.value.replace(/[^\d.]/g, '');
                     setFormData(prev => ({ ...prev, amount: value }))
@@ -728,19 +728,19 @@ export default function Home() {
                   <option value="reales">Reales</option>
                 </select>
                 <input
-                  type="text"
-                  inputMode="decimal"
-                  pattern="[0-9]*[.,]?[0-9]*"
-                  className="w-full mt-2 p-2 border rounded-lg bg-gray-50"
-                  value={calculatedPaymentAmount.toString()}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(',', '.');
-                    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                      setCalculatedPaymentAmount(parseFloat(value) || 0);
-                    }
-                  }}
-                  placeholder="Monto calculado/manual"
-                />
+                    type="text"
+                    inputMode="decimal"
+                    pattern="[0-9]*[.,]?[0-9]*"
+                    className="w-full mt-2 p-2 border rounded-lg bg-gray-50"
+                    value={calculatedPaymentAmount ? Number(calculatedPaymentAmount).toLocaleString('en-US') : ''}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[,.]/g, '');
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        setCalculatedPaymentAmount(parseFloat(value) || 0);
+                      }
+                    }}
+                    placeholder="Monto calculado/manual"
+                  />
               </div>
             </div>
 
@@ -809,7 +809,7 @@ export default function Home() {
             <h2 className="text-3xl font-bold mb-8 text-gray-800">Órdenes Pendientes</h2>
             <div className="space-y-6">
               {transactions
-                .filter((t) => t.status === 'pending')
+                .filter((t) => t.status === 'pending' && t.type !== ('extraccion' as TransactionType))
                 .map((transaction) => (
                   <div key={transaction.id} 
                        className="border-2 rounded-xl p-6 hover:shadow-lg transition-all duration-200
@@ -823,18 +823,21 @@ export default function Home() {
                           <p className="text-lg text-gray-600">{transaction.client!.phone}</p>
                         </div>
                         <div className="space-y-2">
-                          <p className="text-xl">
+                        <p className="text-xl">
                             <span className="font-medium">
-                              {transaction.type === 'buy' ? 'Comprar' : 'Vender'}:
+                              {transaction.type === 'buy' ? 'Comprar' : 
+                              transaction.type === 'sell' ? 'Vender' : 
+                              transaction.type === 'extraccion' ? 'Extracción' : 
+                              transaction.type}:
                             </span>{' '}
                             <span className="font-bold">
-                              {transaction.amount} {transaction.item}
+                              {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
                             </span>
                           </p>
                           <p className="text-xl">
                             <span className="font-medium">Pago:</span>{' '}
                             <span className="font-bold">
-                              {transaction.paymentAmount} {transaction.payment}
+                              {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
                             </span>
                           </p>
                           <p className="text-lg text-gray-600">
@@ -877,11 +880,11 @@ export default function Home() {
                     )}
                   </div>
                 ))}
-              {transactions.filter(t => t.status === 'pending').length === 0 && (
-                <div className="text-center py-12 text-gray-500 text-xl">
-                  No hay órdenes pendientes
-                </div>
-              )}
+              {transactions.filter(t => t.status === 'pending' && t.type !== 'extraccion' as TransactionType).length === 0 && (
+                  <div className="text-center py-12 text-gray-500 text-xl">
+                    No hay órdenes pendientes
+                  </div>
+                )}
             </div>
           </div>
         </div>
@@ -1079,7 +1082,7 @@ export default function Home() {
                           type="text"
                           inputMode="decimal"
                           className="w-full mt-2 p-2 border rounded-lg"
-                          value={formData.amount}
+                          value={formData.amount ? Number(formData.amount).toLocaleString('en-US') : ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/[^\d.]/g, '');
                             setFormData(prev => ({ ...prev, amount: value }))
@@ -1123,19 +1126,19 @@ export default function Home() {
                           <option value="reales">Reales</option>
                         </select>
                         <input
-                          type="text"
-                          inputMode="decimal"
-                          pattern="[0-9]*[.,]?[0-9]*"
-                          className="w-full mt-2 p-2 border rounded-lg bg-gray-50"
-                          value={calculatedPaymentAmount.toString()}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(',', '.');
-                            if (value === '' || /^\d*\.?\d*$/.test(value)) {
-                              setCalculatedPaymentAmount(parseFloat(value) || 0);
-                            }
-                          }}
-                          placeholder="Monto calculado/manual"
-                        />
+                            type="text"
+                            inputMode="decimal"
+                            pattern="[0-9]*[.,]?[0-9]*"
+                            className="w-full mt-2 p-2 border rounded-lg bg-gray-50"
+                            value={calculatedPaymentAmount ? Number(calculatedPaymentAmount).toLocaleString('en-US') : ''}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/[,.]/g, '');
+                              if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                                setCalculatedPaymentAmount(parseFloat(value) || 0);
+                              }
+                            }}
+                            placeholder="Monto calculado/manual"
+                          />
                       </div>
 
                       {/* Notes */}
@@ -1203,7 +1206,7 @@ export default function Home() {
               <h2 className="text-2xl font-bold mb-6">Órdenes Pendientes</h2>
               <div className="grid md:grid-cols-2 gap-4">
                 {transactions
-                  .filter((t) => t.status === 'pending')
+                  .filter((t) => t.status === 'pending' && t.type !== 'extraccion' as TransactionType)
                   .map((transaction) => (
                     <div key={transaction.id} 
                          className="border-2 rounded-xl p-6 hover:shadow-lg transition-all duration-200
@@ -1216,18 +1219,21 @@ export default function Home() {
                             <p className="text-lg text-gray-600">{transaction.client!.phone}</p>
                           </div>
                           <div className="space-y-2">
-                            <p className="text-xl">
+                          <p className="text-xl">
                               <span className="font-medium">
-                                {transaction.type === 'buy' ? 'Comprar' : 'Vender'}:
+                                {transaction.type === 'buy' ? 'Comprar' : 
+                                transaction.type === 'sell' ? 'Vender' : 
+                                transaction.type === 'extraccion' ? 'Extracción' : 
+                                transaction.type}:
                               </span>{' '}
                               <span className="font-bold">
-                                {transaction.amount} {transaction.item}
+                                {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
                               </span>
                             </p>
                             <p className="text-xl">
                               <span className="font-medium">Pago:</span>{' '}
                               <span className="font-bold">
-                                {transaction.paymentAmount} {transaction.payment}
+                                {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
                               </span>
                             </p>
                             <p className="text-lg text-gray-600">
@@ -1270,8 +1276,8 @@ export default function Home() {
                       )}
                     </div>
                   ))}
-                {transactions.filter(t => t.status === 'pending').length === 0 && (
-                  <div className="text-center py-12 text-gray-500 text-xl col-span-2">
+                {transactions.filter(t => t.status === 'pending' && t.type !== 'extraccion' as TransactionType).length === 0 && (
+                  <div className="text-center py-12 text-gray-500 text-xl">
                     No hay órdenes pendientes
                   </div>
                 )}
@@ -1300,7 +1306,9 @@ export default function Home() {
     const [statusNote, setStatusNote] = useState<string>('');
     const [paymentCollector, setPaymentCollector] = useState<string>('');
     const employeeOrders = transactions?.filter(t => 
-      t.employee === selectedEmployee && t.status === 'pending'
+      t.employee === selectedEmployee && 
+      t.status === 'pending' && 
+      t.type !== ('extraccion' as TransactionType)
     );
   
     const updateOrderStatus = async (orderId: number, newStatus: OrderStatus) => {
@@ -1386,11 +1394,14 @@ export default function Home() {
         }
     
         // Update local states
-        setInventory(prev => ({
-          ...prev,
-          [transaction.payment]: prev[transaction.payment] + 
-            (transaction.type === 'buy' ? -transaction.paymentAmount : transaction.paymentAmount)
-        }));
+        // Update local states
+          setInventory(prev => ({
+            ...prev,
+            [transaction.payment]: prev[transaction.payment] + 
+              (transaction.type === 'buy' ? -transaction.paymentAmount : 
+              transaction.type === 'sell' ? transaction.paymentAmount : 
+              transaction.type === 'extraccion' ? -transaction.paymentAmount : 0)
+          }));
     
         setTransactions(prev => prev.map(t => {
           if (t.id === transaction.id) {
@@ -1507,7 +1518,10 @@ export default function Home() {
                   <div>
                     <p className="font-semibold">{transaction.client!.name}</p>
                     <p className="text-sm text-gray-600">
-                      {transaction.type === 'buy' ? 'Compra' : 'Venta'} {transaction.amount} {transaction.item}
+                      {transaction.type === 'buy' ? 'Compra' : 
+                      transaction.type === 'sell' ? 'Venta' : 
+                      transaction.type === 'extraccion' ? 'Extracción' : 
+                      transaction.type} {transaction.amount} {transaction.item}
                     </p>
                     <p className="text-sm text-gray-600">
                       Pago pendiente: {transaction.paymentAmount} {transaction.payment}
@@ -1578,65 +1592,28 @@ export default function Home() {
     transactions: Transaction[];
     setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   }) {
-
+    // State declarations
     const [currentInventory, setCurrentInventory] = useState<Inventory>({
       dolares: 0,
       euros: 0,
       reales: 0,
       pesos: 0
     });
-
-    // Update currentInventory when transactions change
-    useEffect(() => {
-      const updateInventory = async () => {
-        const calculated = await calculateInventory();
-        setCurrentInventory(calculated);
-      };
-      updateInventory();
-    }, [transactions]);
-
+  
     const [transactionNotes, setTransactionNotes] = useState<Record<string | number, string>>({});
-
-  const updateTransactionNote = (transactionId: number, note: string) => {
-  setTransactions(prev => prev.map(t => 
-    t.id === transactionId 
-      ? { ...t, notes: t.notes ? `${t.notes}\nNota adicional: ${note}` : `Nota adicional: ${note}` }
-      : t
-  ));
-  setTransactionNotes(prev => ({ ...prev, [transactionId]: '' }));
-  };
     
-  const todaysTransactions = useMemo(() => {
-    const today = new Date();
-    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
-    
-    return transactions
-      .filter(t => {
-        // Use created_at if available, fall back to id if not
-        const transactionDate = new Date(t.created_at || t.id);
-        return transactionDate >= startOfToday && transactionDate <= endOfToday;
-      })
-      .sort((a, b) => {
-        // Sort by created_at if available, fall back to id if not
-        const dateA = new Date(a.created_at || a.id);
-        const dateB = new Date(b.created_at || b.id);
-        return dateB.getTime() - dateA.getTime();
-      });
-  }, [transactions]);
-
     const [adjustmentsInput, setAdjustmentsInput] = useState<Record<keyof Inventory, string>>(() =>
       Object.fromEntries(Object.keys(inventory).map((key) => [key, ''])) as Record<keyof Inventory, string>
     );
-    
-    const calculateInventory = async (): Promise<Inventory> => {
+  
+    // Calculate Inventory function
+    const calculateInventory = useCallback(async (): Promise<Inventory> => {
       const current: Inventory = {
         dolares: 0,
         euros: 0,
         reales: 0,
         pesos: 0
       };
-    
       console.log('Starting inventory calculation');
       
       transactions
@@ -1651,20 +1628,18 @@ export default function Home() {
               payment: t.payment,
               paymentAmount: t.paymentAmount
             });
-    
+            
             if (t.type === 'manual') {
               current[t.item] += Number(t.amount) || 0;
               console.log(`Manual adjustment: ${t.item} += ${t.amount}`);
-            } else if (t.type === 'extraccion') {
+            } else if (t.type === 'extraccion'as TransactionType) {
               current[t.item] -= Number(t.amount) || 0;
               console.log(`Extraction: ${t.item} -= ${t.amount}`);
             } else if (t.type === 'buy') {
-              // Client buys from us - we give item, receive payment
               current[t.item] -= Number(t.amount) || 0;
               current[t.payment] += Number(t.paymentAmount) || 0;
               console.log(`Buy: ${t.item} -= ${t.amount}, ${t.payment} += ${t.paymentAmount}`);
             } else if (t.type === 'sell') {
-              // Client sells to us - we receive item, give payment
               current[t.item] += Number(t.amount) || 0;
               current[t.payment] -= Number(t.paymentAmount) || 0;
               console.log(`Sell: ${t.item} += ${t.amount}, ${t.payment} -= ${t.paymentAmount}`);
@@ -1672,10 +1647,9 @@ export default function Home() {
             console.log('Current totals:', {...current});
           }
         });
-    
+        
       console.log('Final inventory:', current);
-    
-      // Save to Supabase
+      
       try {
         const timestamp = new Date().toISOString();
         const inventoryRecords = Object.entries(current).map(([currency, amount]) => ({
@@ -1683,25 +1657,61 @@ export default function Home() {
           amount,
           last_updated: timestamp
         }));
-    
+        
         console.log('Saving inventory to Supabase:', inventoryRecords);
-    
-        const { data, error } = await supabase
+        
+        const { error } = await supabase
           .from('inventory')
           .insert(inventoryRecords);
-    
+          
         if (error) {
           console.error('Error saving inventory to Supabase:', error);
-        } else {
-          console.log('Inventory successfully saved to Supabase:', data);
         }
       } catch (error) {
         console.error('Failed to save inventory:', error);
       }
-    
+      
       return current;
-    };
+    }, [transactions]); // Add transactions as a dependency
     
+    // Then the useEffect remains almost the same
+    useEffect(() => {
+      const updateInventory = async () => {
+        const calculated = await calculateInventory();
+        setCurrentInventory(calculated);
+      };
+      updateInventory();
+    }, [calculateInventory]);
+  
+    // Update transaction note function
+    const updateTransactionNote = (transactionId: number, note: string) => {
+      setTransactions(prev => prev.map(t => 
+        t.id === transactionId 
+          ? { ...t, notes: t.notes ? `${t.notes}\nNota adicional: ${note}` : `Nota adicional: ${note}` }
+          : t
+      ));
+      setTransactionNotes(prev => ({ ...prev, [transactionId]: '' }));
+    };
+  
+    // Today's transactions memo
+    const todaysTransactions = useMemo(() => {
+      const today = new Date();
+      const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      
+      return transactions
+        .filter(t => {
+          const transactionDate = new Date(t.created_at || t.id);
+          return transactionDate >= startOfToday && transactionDate <= endOfToday;
+        })
+        .sort((a, b) => {
+          const dateA = new Date(a.created_at || a.id);
+          const dateB = new Date(b.created_at || b.id);
+          return dateB.getTime() - dateA.getTime();
+        });
+    }, [transactions]);
+  
+    // Apply adjustment function
     const applyAdjustment = async (item: keyof Inventory) => {
       const newValue = parseInt(adjustmentsInput[item], 10);
       
@@ -1768,16 +1778,15 @@ export default function Home() {
         }
       }
     };
-
-    // Calculate current inventory for display
-    
-
+  
+    // Component render
     return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Inventario</h2>
-      </div>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Inventario</h2>
+        </div>
+  
         {/* Current Inventory with Manual Adjustment Controls */}
         <div className="bg-white shadow rounded p-4">
           <h3 className="font-semibold mb-4">Inventario Actual</h3>
@@ -1786,7 +1795,7 @@ export default function Home() {
             <div className="p-3 border rounded">
               <div className="font-medium capitalize">pesos</div>
               <div className={`text-lg ${currentInventory.pesos < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {currentInventory.pesos}
+                {Number(currentInventory.pesos).toLocaleString('en-US')}
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <input
@@ -1812,7 +1821,7 @@ export default function Home() {
             <div className="p-3 border rounded">
               <div className="font-medium capitalize">dolares</div>
               <div className={`text-lg ${currentInventory.dolares < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {currentInventory.dolares}
+                {Number(currentInventory.dolares).toLocaleString('en-US')}
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <input
@@ -1839,7 +1848,7 @@ export default function Home() {
             <div className="p-3 border rounded">
               <div className="font-medium capitalize">euros</div>
               <div className={`text-lg ${currentInventory.euros < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {currentInventory.euros}
+                {Number(currentInventory.euros).toLocaleString('en-US')}
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <input
@@ -1865,7 +1874,7 @@ export default function Home() {
             <div className="p-3 border rounded">
               <div className="font-medium capitalize">reales</div>
               <div className={`text-lg ${currentInventory.reales < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {currentInventory.reales}
+                {Number(currentInventory.reales).toLocaleString('en-US')}
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <input
@@ -1889,78 +1898,80 @@ export default function Home() {
             </div>
           </div>
         </div>
+  
+        {/* Today's Transactions Section */}
         <div className="bg-white shadow rounded p-4">
-  <h3 className="font-semibold mb-4">Transacciones de Hoy</h3>
-  <div className="space-y-4">
-  {todaysTransactions.map((t) => (
-  <div
-    key={t.id}
-    className={`border p-3 rounded ${
-      t.status === 'completed' ? 'bg-green-50' :
-      t.status === 'cancelled' ? 'bg-red-50' : 'bg-yellow-50'
-    }`}
-  >
-    <div className="flex justify-between">
-      <div>
-        <span className="font-medium">
-          {t.type === 'manual' ? 'Ajuste Manual' :
-           t.type === 'buy' ? 'Compra' : 'Venta'} {t.amount} {t.item}
-        </span>
-        {t.client && (
-          <div className="text-sm text-gray-600">
-            Cliente: {t.client.name}
+          <h3 className="font-semibold mb-4">Transacciones de Hoy</h3>
+          <div className="space-y-4">
+            {todaysTransactions.map((t) => (
+              <div
+                key={t.id}
+                className={`border p-3 rounded ${
+                  t.status === 'completed' ? 'bg-green-50' :
+                  t.status === 'cancelled' ? 'bg-red-50' : 'bg-yellow-50'
+                }`}
+              >
+                <div className="flex justify-between">
+                  <div>
+                    <span className="font-medium">
+                      {t.type === 'manual' ? 'Ajuste Manual' :
+                       t.type === 'buy' ? 'Compra' : 'Venta'} {t.amount} {t.item}
+                    </span>
+                    {t.client && (
+                      <div className="text-sm text-gray-600">
+                        Cliente: {t.client.name}
+                      </div>
+                    )}
+                    {t.notes && (
+                      <div className="text-sm text-gray-600">{t.notes}</div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className={`font-medium ${
+                      t.status === 'completed' ? 'text-green-600' :
+                      t.status === 'cancelled' ? 'text-red-600' : 'text-yellow-600'
+                    }`}>
+                      {t.status === 'completed' ? 'Completada' :
+                       t.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      {new Date(t.id).toLocaleTimeString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    placeholder="Agregar nota adicional"
+                    value={transactionNotes[t.id] || ''}
+                    onChange={(e) => setTransactionNotes(prev => ({
+                      ...prev,
+                      [t.id]: e.target.value
+                    }))}
+                    className="w-full p-2 border rounded"
+                  />
+                  <button
+                    onClick={() => updateTransactionNote(t.id, transactionNotes[t.id])}
+                    className="mt-1 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                    disabled={!transactionNotes[t.id]}
+                  >
+                    Agregar Nota
+                  </button>
+                </div>
+              </div>
+            ))}
+  
+            {todaysTransactions.length === 0 && (
+              <div className="text-gray-500 text-center py-4">
+                No hay transacciones hoy
+              </div>
+            )}
           </div>
-        )}
-        {t.notes && (
-          <div className="text-sm text-gray-600">{t.notes}</div>
-        )}
-      </div>
-      <div className="text-right">
-        <div className={`font-medium ${
-          t.status === 'completed' ? 'text-green-600' :
-          t.status === 'cancelled' ? 'text-red-600' : 'text-yellow-600'
-        }`}>
-          {t.status === 'completed' ? 'Completada' :
-           t.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
         </div>
-        <div className="text-sm text-gray-600">
-          {new Date(t.id).toLocaleTimeString('es-ES', {
-                                                        day: '2-digit',
-                                                        month: '2-digit',
-                                                        year: 'numeric'
-                                                      })}
-        </div>
-      </div>
-    </div>
-    <div className="mt-2">
-      <input
-        type="text"
-        placeholder="Agregar nota adicional"
-        value={transactionNotes[t.id] || ''}
-        onChange={(e) => setTransactionNotes(prev => ({
-          ...prev,
-          [t.id]: e.target.value
-        }))}
-        className="w-full p-2 border rounded"
-      />
-      <button
-        onClick={() => updateTransactionNote(t.id, transactionNotes[t.id])}
-        className="mt-1 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-        disabled={!transactionNotes[t.id]}
-      >
-        Agregar Nota
-      </button>
-    </div>
-  </div>
-  ))}
-
- {todaysTransactions.length === 0 && (
-      <div className="text-gray-500 text-center py-4">
-        No hay transacciones hoy
-      </div>
-    )}
-    </div>
-  </div>
       </div>
     );
   }

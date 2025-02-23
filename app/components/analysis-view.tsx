@@ -1,7 +1,5 @@
-// Create a new file: components/analysis-view.tsx
-
 import React, { useState, useMemo } from 'react';
-import { Transaction, Inventory } from '../types';
+import { Transaction, Inventory, TransactionType } from '../types';
 import { format, subDays, subWeeks, subMonths, isWithinInterval } from 'date-fns';
 
 interface AnalysisViewProps {
@@ -9,7 +7,10 @@ interface AnalysisViewProps {
   inventory: Inventory;
 }
 
-export const AnalysisView: React.FC<AnalysisViewProps> = ({ transactions, inventory }) => {
+export const AnalysisView: React.FC<AnalysisViewProps> = ({ 
+  transactions,
+  inventory
+}) => {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
@@ -34,7 +35,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ transactions, invent
     }
 
     return transactions.filter(t => 
-      t.type === 'extraccion' &&
+      t.type === ('extraccion' as TransactionType) &&
       t.employee === selectedEmployee &&
       isWithinInterval(new Date(t.created_at || t.id), {
         start: startDateTime,
@@ -72,7 +73,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ transactions, invent
         } else if (t.type === 'sell') {
           state[t.item] += t.amount;
           state[t.payment] -= t.paymentAmount;
-        } else if (t.type === 'extraccion') {
+        } else if (t.type === ('extraccion' as TransactionType)) {
           state[t.item] -= t.amount;
         }
       });

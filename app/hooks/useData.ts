@@ -1,6 +1,6 @@
 // In useData.ts
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Client, Transaction, ExchangeRates, Inventory } from '../types';
 
@@ -189,8 +189,8 @@ export const useTransactions = () => {
   const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
     try {
       console.log('Incoming transaction:', transaction);
-      console.log('Payment Amount:', transaction.paymentAmount);
-  
+      
+      const timestamp = new Date().toISOString();
       const supabaseTransaction = {
         type: transaction.type,
         item: transaction.item,
@@ -202,7 +202,8 @@ export const useTransactions = () => {
         status: transaction.status,
         notes: transaction.notes || null,
         archived: false,
-        created_at: new Date().toISOString() // Add this line
+        created_at: timestamp,  // Add this line
+        id: Date.now()         // Add this line to ensure a proper timestamp-based ID
       };
   
       console.log('Prepared Supabase transaction:', supabaseTransaction);
@@ -280,28 +281,7 @@ export const useExchangeRates = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchRates();
-    
-    const channel = supabase
-      .channel('exchange_rates_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'exchange_rates' },
-        payload => {
-          console.log('Exchange rates change received:', payload);
-          fetchRates();
-        }
-      )
-      .subscribe(status => {
-        console.log('Exchange rates subscription status:', status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  async function fetchRates() {
+  const fetchRates = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -311,7 +291,6 @@ export const useExchangeRates = () => {
       
       if (error) {
         if (error.code === 'PGRST116') {
-          // No data exists yet, create initial rates
           await initializeRates();
         } else {
           throw error;
@@ -324,7 +303,7 @@ export const useExchangeRates = () => {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
 
   async function initializeRates() {
     const initialRates: ExchangeRates = {
@@ -346,6 +325,27 @@ export const useExchangeRates = () => {
     }
   }
 
+  useEffect(() => {
+    fetchRates();
+    
+    const channel = supabase
+      .channel('exchange_rates_changes')
+      .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'exchange_rates' },
+        payload => {
+          console.log('Exchange rates change received:', payload);
+          fetchRates();
+        }
+      )
+      .subscribe(status => {
+        console.log('Exchange rates subscription status:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchRates]);
+
   async function updateRates(newRates: ExchangeRates) {
     try {
       const { error } = await supabase
@@ -354,7 +354,7 @@ export const useExchangeRates = () => {
         
       if (error) throw error;
       
-      await fetchRates(); // Refresh the rates
+      await fetchRates(); // Now this will work
     } catch (error) {
       console.error('Error updating rates:', error);
       throw error;
@@ -377,28 +377,28 @@ export const useInventory = () => {
   const [pendingUpdates, setPendingUpdates] = useState<Array<{ currency: string; amount: number }>>([]);
 
   // Function to sync pending updates with Supabase
-  const syncPendingUpdates = async () => {
-    while (pendingUpdates.length > 0) {
-      const update = pendingUpdates[0];
-      try {
-        const { error } = await supabase
-          .from('inventory')
-          .upsert({ 
-            currency: update.currency,
-            amount: inventory[update.currency as keyof Inventory],
-            last_updated: new Date().toISOString()
-          });
-          
-        if (error) throw error;
+ // In useInventory hook
+const syncPendingUpdates = useCallback(async () => {
+  while (pendingUpdates.length > 0) {
+    const update = pendingUpdates[0];
+    try {
+      const { error } = await supabase
+        .from('inventory')
+        .upsert({ 
+          currency: update.currency,
+          amount: inventory[update.currency as keyof Inventory],
+          last_updated: new Date().toISOString()
+        });
         
-        // Remove the successfully processed update
-        setPendingUpdates(prev => prev.slice(1));
-      } catch (error) {
-        console.error('Error syncing inventory update:', error);
-        break; // Stop processing on error
-      }
+      if (error) throw error;
+      
+      setPendingUpdates(prev => prev.slice(1));
+    } catch (error) {
+      console.error('Error syncing inventory update:', error);
+      break;
     }
-  };
+  }
+}, [pendingUpdates, inventory]);
 
   // Modified setInventory function
   const setInventory = async (value: Inventory | ((prev: Inventory) => Inventory)) => {
@@ -433,7 +433,7 @@ export const useInventory = () => {
     if (pendingUpdates.length > 0) {
       syncPendingUpdates();
     }
-  }, [pendingUpdates]);
+  }, [pendingUpdates, syncPendingUpdates]);
 
   // Initial fetch remains the same
   useEffect(() => {
@@ -453,7 +453,7 @@ export const useInventory = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [pendingUpdates, syncPendingUpdates]);
 
   async function fetchInventory() {
     try {
@@ -495,6 +495,7 @@ export const useInventory = () => {
       setIsLoading(false);
     }
   }
+
 
   async function getInventoryHistory(startDate: Date, endDate: Date) {
     try {
