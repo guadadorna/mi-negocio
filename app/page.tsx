@@ -12,6 +12,11 @@ import SimpleExchangeRates from '@/app/exchange-rates';
 import { AnalysisView } from './components/analysis-view';
 
 const SHOW_TEST_BUTTON = process.env.NODE_ENV === 'development';
+const handleTouchStart = (e: React.TouchEvent) => {
+  e.preventDefault();
+  const target = e.target as HTMLElement;
+  target.click();
+};
 
 // OrdersView props
 interface OrdersViewProps {
@@ -531,6 +536,7 @@ export default function Home() {
       <div>
         <label className="block text-sm font-medium mb-1">Empleado</label>
         <select
+        onTouchStart={handleTouchStart}
           className="w-full p-2 border rounded-lg"
           value={newTransaction.employee}
           onChange={(e) => setNewTransaction(prev => ({ ...prev, employee: e.target.value }))}
@@ -545,6 +551,7 @@ export default function Home() {
       <div>
         <label className="block text-sm font-medium mb-1">Moneda</label>
         <select
+        onTouchStart={handleTouchStart}
           className="w-full p-2 border rounded-lg"
           value={newTransaction.item}
           onChange={(e) => setNewTransaction(prev => ({
@@ -654,6 +661,7 @@ export default function Home() {
               <div>
                 <label className="block text-sm font-medium mb-1">Empleado</label>
                 <select
+                onTouchStart={handleTouchStart}
                   className="w-full p-2 border rounded-lg"
                   value={newTransaction.employee}
                   onChange={(e) => setNewTransaction(prev => ({ ...prev, employee: e.target.value }))}
@@ -670,6 +678,7 @@ export default function Home() {
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Tipo de Operación</label>
               <select
+              onTouchStart={handleTouchStart}
                 className="w-full p-2 border rounded-lg"
                 value={newTransaction.type}
                 onChange={(e) => setNewTransaction(prev => ({
@@ -687,6 +696,7 @@ export default function Home() {
               <div>
                 <label className="block text-sm font-medium mb-1">Moneda</label>
                 <select
+                onTouchStart={handleTouchStart}
                   className="w-full p-2 border rounded-lg"
                   value={newTransaction.item}
                   onChange={(e) => setNewTransaction(prev => ({
@@ -715,6 +725,7 @@ export default function Home() {
               <div>
                 <label className="block text-sm font-medium mb-1">Pago</label>
                 <select
+                onTouchStart={handleTouchStart}
                   className="w-full p-2 border rounded-lg"
                   value={newTransaction.payment}
                   onChange={(e) => setNewTransaction(prev => ({
@@ -925,6 +936,7 @@ export default function Home() {
                     <div>
                       <label className="block text-sm font-medium mb-1">Empleado</label>
                       <select
+                      onTouchStart={handleTouchStart}
                         className="w-full p-2 border rounded-lg"
                         value={newTransaction.employee}
                         onChange={(e) => setNewTransaction(prev => ({ ...prev, employee: e.target.value }))}
@@ -939,6 +951,7 @@ export default function Home() {
                     <div>
                       <label className="block text-sm font-medium mb-1">Moneda</label>
                       <select
+                      onTouchStart={handleTouchStart}
                         className="w-full p-2 border rounded-lg"
                         value={newTransaction.item}
                         onChange={(e) => setNewTransaction(prev => ({
@@ -1050,6 +1063,7 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Tipo de Operación</label>
                         <select
+                        onTouchStart={handleTouchStart}
                           className="w-full p-2 border rounded-lg"
                           value={newTransaction.type}
                           onChange={(e) => setNewTransaction(prev => ({
@@ -1066,6 +1080,7 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Moneda</label>
                         <select
+                        onTouchStart={handleTouchStart}
                           className="w-full p-2 border rounded-lg"
                           value={newTransaction.item}
                           onChange={(e) => setNewTransaction(prev => ({
@@ -1098,6 +1113,7 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Empleado</label>
                         <select
+                        onTouchStart={handleTouchStart}
                           className="w-full p-2 border rounded-lg"
                           value={newTransaction.employee}
                           onChange={(e) => setNewTransaction(prev => ({ ...prev, employee: e.target.value }))}
@@ -1113,6 +1129,7 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Pago</label>
                         <select
+                        onTouchStart={handleTouchStart}
                           className="w-full p-2 border rounded-lg"
                           value={newTransaction.payment}
                           onChange={(e) => setNewTransaction(prev => ({
@@ -1434,6 +1451,7 @@ export default function Home() {
         <div className="bg-white shadow rounded p-4">
           <h2 className="text-lg font-semibold mb-4">Vista Empleado</h2>
           <select 
+          onTouchStart={handleTouchStart}
             className="w-full p-2 border rounded mb-4"
             value={selectedEmployee}
             onChange={e => setSelectedEmployee(e.target.value)}
@@ -1540,6 +1558,7 @@ export default function Home() {
                 
                 <div className="mt-4 space-y-2">
                   <select
+                  onTouchStart={handleTouchStart}
                     className="w-full p-2 border rounded"
                     value={paymentCollector}
                     onChange={(e) => setPaymentCollector(e.target.value)}
@@ -2161,6 +2180,7 @@ const groupedTransactions = useMemo(() => {
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-4">
           <select
+          onTouchStart={handleTouchStart}
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'month')}
             className="border rounded p-2"
