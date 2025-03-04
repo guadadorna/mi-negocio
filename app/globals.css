@@ -5,20 +5,62 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --card-bg: #ffffff;
+  --blue-light-bg: #e6f0ff;
+  --green-light-bg: #e6fff0;
+  --yellow-light-bg: #fffde6;
+  --border-color: #e5e7eb;
 }
 
+/* Remove dark mode for consistency across platforms */
+/* Commenting out rather than removing so you can restore if needed
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
 }
+*/
 
 /* Base styles */
 body {
   color: var(--foreground);
-  background: var(--background);
+  background: var(--background) !important;
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Force light mode for all elements */
+.bg-white {
+  background-color: var(--card-bg) !important;
+}
+
+.bg-gray-50 {
+  background-color: #f9fafb !important;
+}
+
+/* Exchange rate box backgrounds */
+.bg-blue-50 {
+  background-color: var(--blue-light-bg) !important;
+  border: 1px solid #c2d8ff !important;
+}
+
+.bg-green-50 {
+  background-color: var(--green-light-bg) !important;
+  border: 1px solid #c2ffd8 !important;
+}
+
+.bg-yellow-50 {
+  background-color: var(--yellow-light-bg) !important;
+  border: 1px solid #fff8c2 !important;
+}
+
+/* Force borders to be visible */
+.border {
+  border-color: var(--border-color) !important;
+}
+
+.rounded-lg, .rounded-xl, .rounded, .p-4, .p-6, .p-8 {
+  background-color: var(--card-bg) !important;
 }
 
 /* Mobile touch improvements */
@@ -35,7 +77,7 @@ body {
 
 /* Form elements */
 input, select, textarea {
-  background-color: var(--background);
+  background-color: var(--card-bg) !important;
   color: var(--foreground);
   -webkit-appearance: none;
   appearance: none;
@@ -60,9 +102,23 @@ input[type=number] {
     line-height: 1.15;
     padding: 0.75rem;
   }
-  
   select {
     padding-right: 2rem;
+  }
+}
+
+/* Android specific fixes */
+@supports not (-webkit-touch-callout: none) {
+  /* Force white backgrounds on Android */
+  .shadow, .shadow-lg, .shadow-md, .shadow-sm, .shadow-xl {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+    background-color: var(--card-bg) !important;
+  }
+  
+  /* Ensure better contrast in inventory items */
+  .p-3.border.rounded {
+    border: 1px solid #d1d5db !important;
+    background-color: var(--card-bg) !important;
   }
 }
 
