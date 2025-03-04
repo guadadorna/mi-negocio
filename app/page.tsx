@@ -1510,8 +1510,8 @@ export default function Home() {
           setInventory(prev => ({
             ...prev,
             [transaction.payment]: prev[transaction.payment] + 
-              (transaction.type === 'buy' ? -transaction.paymentAmount : 
-              transaction.type === 'sell' ? transaction.paymentAmount : 
+              (transaction.type === 'buy' ? transaction.paymentAmount : 
+              transaction.type === 'sell' ? -transaction.paymentAmount : 
               transaction.type === 'extraccion' ? -transaction.paymentAmount : 0)
           }));
     
@@ -1743,11 +1743,11 @@ const calculateInventory = useCallback(async (): Promise<Inventory> => {
       } else if (t.type === 'extraccion' as TransactionType) {
         current[t.item] -= Number(t.amount) || 0;
       } else if (t.type === 'buy') {
-        current[t.item] -= Number(t.amount) || 0;
-        current[t.payment] += Number(t.paymentAmount) || 0;
-      } else if (t.type === 'sell') {
         current[t.item] += Number(t.amount) || 0;
         current[t.payment] -= Number(t.paymentAmount) || 0;
+      } else if (t.type === 'sell') {
+        current[t.item] -= Number(t.amount) || 0;
+        current[t.payment] += Number(t.paymentAmount) || 0;
       }
     });
   
