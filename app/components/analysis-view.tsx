@@ -68,11 +68,11 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({
 
       txs.forEach(t => {
         if (t.type === 'buy') {
-          state[t.item] -= t.amount;
-          state[t.payment] += t.paymentAmount;
-        } else if (t.type === 'sell') {
           state[t.item] += t.amount;
           state[t.payment] -= t.paymentAmount;
+        } else if (t.type === 'sell') {
+          state[t.item] -= t.amount;
+          state[t.payment] += t.paymentAmount;
         } else if (t.type === ('extraccion' as TransactionType)) {
           state[t.item] -= t.amount;
         }

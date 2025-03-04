@@ -63,7 +63,7 @@ export default function Home() {
   const { transactions, setTransactions, addTransaction, updateTransaction } = useTransactions();
   const { rates: exchangeRates, setRates: setExchangeRates } = useExchangeRates();
   const { inventory, setInventory } = useInventory();
-  const employees: string[] = ['Veneno', 'Chinda', 'Juan'];
+  const employees: string[] = ['Juan','Veneno', 'Chinda','Pancho','Tiburon','Pollito' ];
   const [user, setUser] = useState<{ username: string; role: 'admin' | 'employee' } | null>(null);
   const [newTransaction, setNewTransaction] = useState<NewTransactionType>({
     type: 'buy',
@@ -1658,7 +1658,7 @@ export default function Home() {
                     onChange={(e) => setPaymentCollector(e.target.value)}
                   >
                     <option value="">Seleccionar empleado que recibió el pago</option>
-                    {['Veneno', 'Chinda', 'Juan'].map((emp) => (
+                    {['Juan','Veneno', 'Chinda','Pancho','Tiburon','Pollito' ].map((emp) => (
                       <option key={emp} value={emp}>{emp}</option>
                     ))}
                   </select>
