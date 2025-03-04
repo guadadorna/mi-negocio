@@ -21,7 +21,10 @@ const Login = ({ onLogin }: { onLogin: (user: User) => void }) => {
       'admin': 'admin',
       'veneno': 'employee',
       'chinda': 'employee',
-      'juan': 'employee'
+      'juan': 'employee',
+      'pancho': 'employee',
+      'tiburon': 'employee',
+      'pollito': 'employee'
     };
 
     if (username.toLowerCase() in users) {
