@@ -74,6 +74,7 @@ export default function Home() {
     employee: '',
     client: null
   });
+  
 
   console.log("Rendering Home component with transaction count:", transactions.length);
   

@@ -63,6 +63,157 @@ body {
   background-color: var(--card-bg) !important;
 }
 
+/* BUTTON STYLE FIXES */
+
+/* Blue buttons */
+.bg-blue-500 {
+  background-color: #3b82f6 !important;
+}
+.bg-blue-600 {
+  background-color: #2563eb !important;
+}
+.hover\:bg-blue-600:hover {
+  background-color: #2563eb !important;
+}
+.hover\:bg-blue-700:hover {
+  background-color: #1d4ed8 !important;
+}
+
+/* Green buttons */
+.bg-green-500 {
+  background-color: #10b981 !important;
+}
+.bg-green-600 {
+  background-color: #059669 !important;
+}
+.hover\:bg-green-600:hover {
+  background-color: #059669 !important;
+}
+
+/* Red buttons */
+.bg-red-500 {
+  background-color: #ef4444 !important;
+}
+.bg-red-600 {
+  background-color: #dc2626 !important;
+}
+.hover\:bg-red-600:hover {
+  background-color: #dc2626 !important;
+}
+
+/* Yellow buttons */
+.bg-yellow-500 {
+  background-color: #f59e0b !important;
+}
+.bg-yellow-600 {
+  background-color: #d97706 !important;
+}
+.hover\:bg-yellow-600:hover {
+  background-color: #d97706 !important;
+}
+
+/* Gray buttons */
+.bg-gray-500 {
+  background-color: #6b7280 !important;
+}
+.bg-gray-600 {
+  background-color: #4b5563 !important;
+}
+.hover\:bg-gray-600:hover {
+  background-color: #4b5563 !important;
+}
+.bg-gray-100 {
+  background-color: #f3f4f6 !important;
+}
+.bg-gray-200 {
+  background-color: #e5e7eb !important;
+}
+.hover\:bg-gray-200:hover {
+  background-color: #e5e7eb !important;
+}
+
+/* Gradient buttons */
+.from-blue-600 {
+  --tw-gradient-from: #2563eb !important;
+}
+.to-blue-700 {
+  --tw-gradient-to: #1d4ed8 !important;
+}
+.from-blue-700 {
+  --tw-gradient-from: #1d4ed8 !important;
+}
+.to-blue-800 {
+  --tw-gradient-to: #1e40af !important;
+}
+.from-gray-500 {
+  --tw-gradient-from: #6b7280 !important;
+}
+.to-gray-600 {
+  --tw-gradient-to: #4b5563 !important;
+}
+.from-gray-600 {
+  --tw-gradient-from: #4b5563 !important;
+}
+.to-gray-700 {
+  --tw-gradient-to: #374151 !important;
+}
+
+/* Disabled button states */
+.disabled\:bg-gray-300:disabled,
+.disabled\:from-gray-300:disabled {
+  background-color: #d1d5db !important;
+  --tw-gradient-from: #d1d5db !important;
+}
+.disabled\:bg-gray-400:disabled,
+.disabled\:to-gray-400:disabled {
+  background-color: #9ca3af !important;
+  --tw-gradient-to: #9ca3af !important;
+}
+
+/* Status badges and colored boxes */
+.bg-yellow-100 {
+  background-color: #fef9c3 !important;
+}
+.bg-red-50 {
+  background-color: #fef2f2 !important;
+}
+.border-red-200 {
+  border-color: #fecaca !important;
+}
+.border-red-300 {
+  border-color: #fca5a5 !important;
+}
+.bg-orange-50 {
+  background-color: #fff7ed !important;
+}
+.border-orange-200 {
+  border-color: #fed7aa !important;
+}
+.border-yellow-200 {
+  border-color: #fef08a !important;
+}
+.border-yellow-300 {
+  border-color: #fde047 !important;
+}
+.border-green-200 {
+  border-color: #bbf7d0 !important;
+}
+.border-green-300 {
+  border-color: #86efac !important;
+}
+.from-blue-100 {
+  --tw-gradient-from: #dbeafe !important;
+}
+.to-blue-200 {
+  --tw-gradient-to: #bfdbfe !important;
+}
+.from-blue-200 {
+  --tw-gradient-from: #bfdbfe !important;
+}
+.to-blue-300 {
+  --tw-gradient-to: #93c5fd !important;
+}
+
 /* Mobile touch improvements */
 * {
   -webkit-tap-highlight-color: transparent;
