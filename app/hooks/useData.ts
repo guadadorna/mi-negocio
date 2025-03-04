@@ -1,6 +1,6 @@
 // In useData.ts
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Client, Transaction, ExchangeRates, Inventory } from '../types';
 
@@ -83,10 +83,28 @@ export const useClients = () => {
     }
   };
 
+  const deleteClient = async (clientId: number) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId);
+        
+      if (error) throw error;
+      
+      // Update the local state by removing the deleted client
+      setClientsState(prevClients => prevClients.filter(client => client.id !== clientId));
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      throw error;
+    }
+  };
+
   return { 
     clients, 
     setClients: addClient, 
     updateClient,
+    deleteClient,
     isLoading 
   };
 };
@@ -126,7 +144,7 @@ export const useTransactions = () => {
 
   useEffect(() => {
     fetchTransactions();
-    
+    /*
     const channel = supabase
       .channel('transactions_changes')
       .on('postgres_changes', 
@@ -143,12 +161,18 @@ export const useTransactions = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+    */
   }, []);
 
   // In useData.ts, update the setTransactions function:
 
   const setTransactions = async (newTransactions: Transaction[] | ((prev: Transaction[]) => Transaction[])) => {
     const updatedTransactions = newTransactions instanceof Function ? newTransactions(transactions) : newTransactions;
+    
+    // Check if transactions have actually changed
+    if (JSON.stringify(updatedTransactions) === JSON.stringify(transactions)) {
+      return; // Skip the update entirely if nothing changed
+    }
     
     try {
       // Find which transactions have changed
@@ -364,8 +388,6 @@ export const useExchangeRates = () => {
   return { rates, setRates: updateRates, isLoading };
 };
 
-// In useData.ts, modify the useInventory hook:
-
 export const useInventory = () => {
   const [inventory, setInventoryState] = useState<Inventory>({
     dolares: 0,
@@ -374,109 +396,27 @@ export const useInventory = () => {
     pesos: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [pendingUpdates, setPendingUpdates] = useState<Array<{ currency: string; amount: number }>>([]);
-
-  // Function to sync pending updates with Supabase
- // In useInventory hook
-const syncPendingUpdates = useCallback(async () => {
-  while (pendingUpdates.length > 0) {
-    const update = pendingUpdates[0];
-    try {
-      const { error } = await supabase
-        .from('inventory')
-        .upsert({ 
-          currency: update.currency,
-          amount: inventory[update.currency as keyof Inventory],
-          last_updated: new Date().toISOString()
-        });
-        
-      if (error) throw error;
-      
-      setPendingUpdates(prev => prev.slice(1));
-    } catch (error) {
-      console.error('Error syncing inventory update:', error);
-      break;
-    }
-  }
-}, [pendingUpdates, inventory]);
-
-  // Modified setInventory function
-  const setInventory = async (value: Inventory | ((prev: Inventory) => Inventory)) => {
-    const newInventory = value instanceof Function ? value(inventory) : value;
-    const timestamp = new Date().toISOString();
-    
-    try {
-      // Insert new inventory records instead of updating
-      const inventoryRecords = Object.entries(newInventory).map(([currency, amount]) => ({
-        currency,
-        amount,
-        last_updated: timestamp
-      }));
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSyncTimeRef = useRef<number>(0);
+  const isDatabaseSyncingRef = useRef<boolean>(false);
   
-      // Insert new records
-      const { error } = await supabase
-        .from('inventory')
-        .insert(inventoryRecords);
-        
-      if (error) throw error;
-      
-      // Update local state
-      setInventoryState(newInventory);
-    } catch (error) {
-      console.error('Error updating inventory:', error);
-      await fetchInventory(); // Refresh from database on error
-    }
-  };
-
-  // Sync pending updates whenever they change
-  useEffect(() => {
-    if (pendingUpdates.length > 0) {
-      syncPendingUpdates();
-    }
-  }, [pendingUpdates, syncPendingUpdates]);
-
-  // Initial fetch remains the same
-  useEffect(() => {
-    fetchInventory();
+  // Function to fetch inventory (only called at initialization)
+  const fetchInventory = useCallback(async () => {
+    if (isDatabaseSyncingRef.current) return;
     
-    const channel = supabase
-      .channel('inventory_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'inventory' },
-        payload => {
-          console.log('Inventory change received:', payload);
-          fetchInventory();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [pendingUpdates, syncPendingUpdates]);
-
-  async function fetchInventory() {
     try {
       setIsLoading(true);
+      isDatabaseSyncingRef.current = true;
       
-      // First get the latest timestamp
-      const { data: latestData, error: latestError } = await supabase
-        .from('inventory')
-        .select('last_updated')
-        .order('last_updated', { ascending: false })
-        .limit(1)
-        .single();
-  
-      if (latestError) throw latestError;
-  
-      // Then get all records with that timestamp
       const { data, error } = await supabase
         .from('inventory')
         .select('*')
-        .eq('last_updated', latestData.last_updated);
+        .order('last_updated', { ascending: false })
+        .limit(4); // 4 currency types
       
       if (error) throw error;
       
+      // Create inventory object
       const inventoryObj: Inventory = {
         dolares: 0,
         euros: 0,
@@ -484,35 +424,90 @@ const syncPendingUpdates = useCallback(async () => {
         pesos: 0
       };
       
+      // Group by currency and take the most recent one for each
+      const currencyMap = new Map();
       (data || []).forEach(record => {
+        if (!currencyMap.has(record.currency) || 
+            new Date(record.last_updated) > new Date(currencyMap.get(record.currency).last_updated)) {
+          currencyMap.set(record.currency, record);
+        }
+      });
+      
+      // Apply the most recent value for each currency
+      currencyMap.forEach(record => {
         inventoryObj[record.currency as keyof Inventory] = record.amount;
       });
       
       setInventoryState(inventoryObj);
+      lastSyncTimeRef.current = Date.now();
     } catch (error) {
       console.error('Error fetching inventory:', error);
     } finally {
       setIsLoading(false);
+      isDatabaseSyncingRef.current = false;
     }
-  }
+  }, []);
 
+  // Initial fetch
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
-  async function getInventoryHistory(startDate: Date, endDate: Date) {
+  // This sync function will be called on a timer
+  const syncToDatabase = useCallback(async (currentInventory: Inventory) => {
+    if (isDatabaseSyncingRef.current) return;
+    
     try {
-      const { data, error } = await supabase
+      isDatabaseSyncingRef.current = true;
+      const timestamp = new Date().toISOString();
+      
+      // Create a batch of inserts
+      const inventoryRecords = Object.entries(currentInventory).map(([currency, amount]) => ({
+        currency,
+        amount,
+        last_updated: timestamp
+      }));
+      
+      // Insert to Supabase
+      const { error } = await supabase
         .from('inventory')
-        .select('*')
-        .gte('last_updated', startDate.toISOString())
-        .lte('last_updated', endDate.toISOString())
-        .order('last_updated', { ascending: true });
-  
+        .insert(inventoryRecords);
+        
       if (error) throw error;
-      return data;
+      
+      lastSyncTimeRef.current = Date.now();
     } catch (error) {
-      console.error('Error fetching inventory history:', error);
-      return null;
+      console.error('Error syncing inventory to database:', error);
+    } finally {
+      isDatabaseSyncingRef.current = false;
     }
-  }
+  }, []);
+
+  const setInventory = useCallback((value: Inventory | ((prev: Inventory) => Inventory)) => {
+    // Update local state immediately
+    setInventoryState(prevInventory => {
+      const newInventory = value instanceof Function ? value(prevInventory) : value;
+      
+      // Check if values actually changed before updating state
+      if (JSON.stringify(newInventory) === JSON.stringify(prevInventory)) {
+        return prevInventory; // Return the same object reference to prevent re-render
+      }
+      
+      // Debounce database updates to prevent rapid updates
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      
+      // Only sync to database if it's been at least 5 seconds since the last sync
+      if (Date.now() - lastSyncTimeRef.current > 5000) {
+        updateTimeoutRef.current = setTimeout(() => {
+          syncToDatabase(newInventory);
+        }, 1000);
+      }
+      
+      return newInventory;
+    });
+  }, [syncToDatabase]);
 
   return { inventory, setInventory, isLoading };
 };

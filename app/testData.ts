@@ -20,7 +20,6 @@ export const generateTestData = async (
   const oneYearAgo = new Date(now.setFullYear(now.getFullYear() - 1));
 
   for (let d = 0; d < 365; d++) {
-    const transactionDate = new Date(oneYearAgo.getTime() + (d * 24 * 60 * 60 * 1000));
     const dailyTransactions = 2 + Math.floor(Math.random() * 2);
     
     for (let t = 0; t < dailyTransactions; t++) {

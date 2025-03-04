@@ -1,5 +1,5 @@
-import React, { useState, useEffect,useMemo } from 'react';
-import { Transaction, OrderStatus, Client, ExchangeRates } from '../types';
+import React, { useState, useMemo } from 'react'; 
+import { Transaction, OrderStatus, ExchangeRates } from '../types'; 
 import SimpleExchangeRates from '../exchange-rates';
 import { supabase } from '../lib/supabase';
 
@@ -164,7 +164,7 @@ const EmployeeDashboard = ({
       console.log('Updating transaction with:', updatedTransaction);
   
       // Update in Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('transactions')
         .update(updatedTransaction)
         .eq('id', orderId)

@@ -3,7 +3,7 @@
 import { useClients, useTransactions, useExchangeRates , useInventory} from './hooks/useData';
 import { Login, EmployeeDashboard } from './components/employee-interface';
 import { supabase } from './lib/supabase';
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Client, Transaction, View, OrderStatus, CurrencyType, TransactionType, NewTransactionType,Inventory,ExchangeRates } from './types'
 import * as XLSX from 'xlsx'
 import { isAfter, subMonths } from 'date-fns'
@@ -11,12 +11,14 @@ import { useCallback } from 'react';
 import SimpleExchangeRates from '@/app/exchange-rates';
 import { AnalysisView } from './components/analysis-view';
 
-const SHOW_TEST_BUTTON = process.env.NODE_ENV === 'development';
-const handleTouchStart = (e: React.TouchEvent) => {
-  e.preventDefault();
-  const target = e.target as HTMLElement;
-  target.click();
+
+const handleInputFocus = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+  setTimeout(() => {
+    e.target.focus();
+  }, 10);
 };
+
+const SHOW_TEST_BUTTON = process.env.NODE_ENV === 'development';
 
 // OrdersView props
 interface OrdersViewProps {
@@ -72,6 +74,8 @@ export default function Home() {
     employee: '',
     client: null
   });
+
+  console.log("Rendering Home component with transaction count:", transactions.length);
   
   function ClientManagement() {
     const [formData, setFormData] = useState({
@@ -80,6 +84,8 @@ export default function Home() {
       phone: ''
     });
     const [editingClient, setEditingClient] = useState<Client | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const { clients, setClients, updateClient, deleteClient } = useClients();
   
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -108,6 +114,20 @@ export default function Home() {
       setFormData({ name: '', address: '', phone: '' });
     };
   
+    const handleDelete = async () => {
+      if (!editingClient) return;
+      
+      try {
+        await deleteClient(editingClient.id);
+        setEditingClient(null);
+        setFormData({ name: '', address: '', phone: '' });
+        setShowDeleteConfirm(false);
+      } catch (error) {
+        console.error('Error deleting client:', error);
+        alert('Error al eliminar cliente. Por favor, intente nuevamente.');
+      }
+    };
+  
     return (
       <div className="space-y-6">
         <form onSubmit={handleSubmit} className="bg-white shadow rounded p-4">
@@ -118,23 +138,26 @@ export default function Home() {
             <input
               required
               placeholder="Nombre"
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded touch-manipulation"
               value={formData.name}
               onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onFocus={handleInputFocus}
             />
             <input
               required
               placeholder="Dirección"
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded touch-manipulation"
               value={formData.address}
               onChange={e => setFormData(prev => ({ ...prev, address: e.target.value }))}
+              onFocus={handleInputFocus}
             />
             <input
               required
               placeholder="Teléfono"
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded touch-manipulation"
               value={formData.phone}
               onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              onFocus={handleInputFocus}
             />
             <div className="flex gap-2">
               <button 
@@ -144,17 +167,50 @@ export default function Home() {
                 {editingClient ? 'Guardar Cambios' : 'Agregar Cliente'}
               </button>
               {editingClient && (
-                <button 
-                  type="button"
-                  onClick={handleCancel}
-                  className="flex-1 bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
-                >
-                  Cancelar
-                </button>
+                <>
+                  <button 
+                    type="button"
+                    onClick={handleCancel}
+                    className="flex-1 bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
+                  >
+                    Cancelar
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                  >
+                    Eliminar
+                  </button>
+                </>
               )}
             </div>
           </div>
         </form>
+  
+        {/* Confirmation Dialog */}
+        {showDeleteConfirm && editingClient && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+              <h3 className="text-lg font-bold mb-4">Confirmar Eliminación</h3>
+              <p className="mb-6">¿Está seguro que desea eliminar a <span className="font-semibold">{editingClient.name}</span>? Esta acción no se puede deshacer.</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+                >
+                  Eliminar
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
   
         <div className="bg-white shadow rounded p-4">
           <h2 className="text-lg font-semibold mb-4">Lista de Clientes</h2>
@@ -266,6 +322,7 @@ export default function Home() {
                     className={`w-full p-2 border rounded ${
                       editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
                     }`}
+                    onFocus={handleInputFocus}
                   />
                   <span className="text-xs text-gray-500">Compra</span>
                 </div>
@@ -280,6 +337,7 @@ export default function Home() {
                     className={`w-full p-2 border rounded ${
                       editable ? '' : 'bg-gray-100 text-gray-600 cursor-not-allowed'
                     }`}
+                    onFocus={handleInputFocus}
                   />
                   <span className="text-xs text-gray-500">Venta</span>
                 </div>
@@ -530,78 +588,97 @@ export default function Home() {
             {/* Your existing mobile layout */}
             {showExtractionForm ? (
   // Extraction Form
-  <div className="bg-white shadow rounded-lg p-6">
-    <h3 className="text-lg font-semibold mb-4">Nueva Extracción</h3>
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium mb-1">Empleado</label>
-        <select
-        onTouchStart={handleTouchStart}
-          className="w-full p-2 border rounded-lg"
-          value={newTransaction.employee}
-          onChange={(e) => setNewTransaction(prev => ({ ...prev, employee: e.target.value }))}
-        >
-          <option value="">Seleccionar empleado</option>
-          {employees.map(emp => (
-            <option key={emp} value={emp}>{emp}</option>
-          ))}
-        </select>
-      </div>
+  <div className="bg-white shadow rounded-lg p-6"
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}>
+  <h3 className="text-lg font-semibold mb-4">Nueva Extracción</h3>
+  <div className="space-y-4">
+    <div>
+      <label className="block text-sm font-medium mb-1">Empleado</label>
+      <select
+        className="w-full p-2 border rounded-lg touch-manipulation"
+        value={newTransaction.employee}
+        onChange={(e) => {
+          // Prevent form reset by wrapping state updates
+          e.stopPropagation();
+          setNewTransaction(prev => ({ ...prev, employee: e.target.value }));
+        }}
+      >
+        <option value="">Seleccionar empleado</option>
+        {employees.map(emp => (
+          <option key={emp} value={emp}>{emp}</option>
+        ))}
+      </select>
+    </div>
 
-      <div>
-        <label className="block text-sm font-medium mb-1">Moneda</label>
-        <select
-        onTouchStart={handleTouchStart}
-          className="w-full p-2 border rounded-lg"
-          value={newTransaction.item}
-          onChange={(e) => setNewTransaction(prev => ({
+    <div>
+      <label className="block text-sm font-medium mb-1">Moneda</label>
+      <select
+        className="w-full p-2 border rounded-lg touch-manipulation"
+        value={newTransaction.item}
+        onChange={(e) => {
+          e.stopPropagation();
+          setNewTransaction(prev => ({
             ...prev,
             item: e.target.value as CurrencyType,
-          }))}
-        >
-          <option value="dolares">Dólares</option>
-          <option value="euros">Euros</option>
-          <option value="reales">Reales</option>
-          <option value="pesos">Pesos</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Cantidad</label>
-        <input
-          type="text"
-          inputMode="decimal"
-          className="w-full p-2 border rounded-lg"
-          value={formData.amount}
-          onChange={(e) => {
-            const value = e.target.value.replace(/[^\d.]/g, '');
-            setFormData(prev => ({ ...prev, amount: value }))
-          }}
-          placeholder="Cantidad"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">Notas</label>
-        <textarea
-          className="w-full p-2 border rounded-lg"
-          value={formData.notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-          rows={2}
-          placeholder="Agregar notas adicionales..."
-        />
-      </div>
-
-      <button
-        onClick={handleCreateExtraction}
-        className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700
-                 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        disabled={!formData.amount || !newTransaction.employee}
+          }));
+        }}
       >
-        Registrar Extracción
-      </button>
+        <option value="dolares">Dólares</option>
+        <option value="euros">Euros</option>
+        <option value="reales">Reales</option>
+        <option value="pesos">Pesos</option>
+      </select>
     </div>
+
+    <div>
+      <label className="block text-sm font-medium mb-1">Cantidad</label>
+      <input
+        type="text"
+        inputMode="decimal"
+        className="w-full p-2 border rounded-lg touch-manipulation"
+        value={formData.amount ? Number(formData.amount).toLocaleString('en-US') : ''}
+        onChange={(e) => {
+          e.stopPropagation();
+          const value = e.target.value.replace(/[^\d.]/g, '');
+          setFormData(prev => ({ ...prev, amount: value }));
+        }}
+        placeholder="Cantidad"
+        onFocus={(e) => {
+          e.stopPropagation();
+          handleInputFocus(e);
+        }}
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium mb-1">Notas</label>
+      <textarea
+        className="w-full p-2 border rounded-lg touch-manipulation"
+        value={formData.notes}
+        onChange={(e) => {
+          e.stopPropagation();
+          setFormData(prev => ({ ...prev, notes: e.target.value }));
+        }}
+        rows={2}
+        placeholder="Agregar notas adicionales..."
+      />
+    </div>
+
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleCreateExtraction();
+      }}
+      className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700
+               disabled:bg-gray-400 disabled:cursor-not-allowed"
+      disabled={!formData.amount || !newTransaction.employee}
+    >
+      Registrar Extracción
+    </button>
   </div>
+</div>
 ) : (
   // Your existing regular transaction form
           <div className="bg-white shadow rounded-lg p-4">
@@ -612,7 +689,7 @@ export default function Home() {
                 <label className="block text-sm font-medium mb-1">Cliente</label>
                 <div className="relative">
                   {newTransaction.client ? (
-                    <div className="w-full p-2 border rounded bg-blue-50 flex justify-between items-center">
+                    <div className="w-full p-2 border rounded bg-blue-50 flex justify-between items-center touch-manipulation">
                       <div>
                         <span className="font-medium">{newTransaction.client.name}</span>
                         <span className="text-sm text-gray-600 ml-2">{newTransaction.client.phone}</span>
@@ -631,9 +708,10 @@ export default function Home() {
                     <input
                       type="text"
                       placeholder="Buscar cliente..."
-                      className="w-full p-2 border rounded"
+                      className="w-full p-2 border rounded touch-manipulation"
                       value={formData.searchTerm}
                       onChange={(e) => setFormData(prev => ({ ...prev, searchTerm: e.target.value }))}
+                      onFocus={handleInputFocus}
                     />
                   )}
                   
@@ -661,8 +739,7 @@ export default function Home() {
               <div>
                 <label className="block text-sm font-medium mb-1">Empleado</label>
                 <select
-                onTouchStart={handleTouchStart}
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border rounded-lg touch-manipulation"
                   value={newTransaction.employee}
                   onChange={(e) => setNewTransaction(prev => ({ ...prev, employee: e.target.value }))}
                 >
@@ -678,8 +755,7 @@ export default function Home() {
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Tipo de Operación</label>
               <select
-              onTouchStart={handleTouchStart}
-                className="w-full p-2 border rounded-lg"
+                className="w-full p-2 border rounded-lg touch-manipulation"
                 value={newTransaction.type}
                 onChange={(e) => setNewTransaction(prev => ({
                   ...prev,
@@ -696,8 +772,7 @@ export default function Home() {
               <div>
                 <label className="block text-sm font-medium mb-1">Moneda</label>
                 <select
-                onTouchStart={handleTouchStart}
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border rounded-lg touch-manipulation"
                   value={newTransaction.item}
                   onChange={(e) => setNewTransaction(prev => ({
                     ...prev,
@@ -719,14 +794,14 @@ export default function Home() {
                     setFormData(prev => ({ ...prev, amount: value }))
                   }}
                   placeholder="Cantidad"
+                  onFocus={handleInputFocus}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Pago</label>
                 <select
-                onTouchStart={handleTouchStart}
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border rounded-lg touch-manipulation"
                   value={newTransaction.payment}
                   onChange={(e) => setNewTransaction(prev => ({
                     ...prev,
@@ -742,7 +817,7 @@ export default function Home() {
                     type="text"
                     inputMode="decimal"
                     pattern="[0-9]*[.,]?[0-9]*"
-                    className="w-full mt-2 p-2 border rounded-lg bg-gray-50"
+                    className="w-full mt-2 p-2 border rounded-lg bg-gray-50 touch-manipulation"
                     value={calculatedPaymentAmount ? Number(calculatedPaymentAmount).toLocaleString('en-US') : ''}
                     onChange={(e) => {
                       const value = e.target.value.replace(/[,.]/g, '');
@@ -751,6 +826,7 @@ export default function Home() {
                       }
                     }}
                     placeholder="Monto calculado/manual"
+                    onFocus={handleInputFocus}
                   />
               </div>
             </div>
@@ -759,7 +835,7 @@ export default function Home() {
             <div className="mb-4">
               <label className="block text-sm font-medium mb-1">Notas</label>
               <textarea
-                className="w-full p-2 border rounded-lg"
+                className="w-full p-2 border rounded-lg touch-manipulation"
                 value={formData.notes}
                 onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                 rows={2}
@@ -930,78 +1006,97 @@ export default function Home() {
             {/* Main Form Section */}
               {showExtractionForm ? (
                 // Extraction Form
-                <div className="bg-white shadow rounded-lg p-6">
-                  <h3 className="text-lg font-semibold mb-4">Nueva Extracción</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Empleado</label>
-                      <select
-                      onTouchStart={handleTouchStart}
-                        className="w-full p-2 border rounded-lg"
-                        value={newTransaction.employee}
-                        onChange={(e) => setNewTransaction(prev => ({ ...prev, employee: e.target.value }))}
-                      >
-                        <option value="">Seleccionar empleado</option>
-                        {employees.map(emp => (
-                          <option key={emp} value={emp}>{emp}</option>
-                        ))}
-                      </select>
-                    </div>
+                <div className="bg-white shadow rounded-lg p-6"
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">Nueva Extracción</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Empleado</label>
+                <select
+                  className="w-full p-2 border rounded-lg touch-manipulation"
+                  value={newTransaction.employee}
+                  onChange={(e) => {
+                    // Prevent form reset by wrapping state updates
+                    e.stopPropagation();
+                    setNewTransaction(prev => ({ ...prev, employee: e.target.value }));
+                  }}
+                >
+                  <option value="">Seleccionar empleado</option>
+                  {employees.map(emp => (
+                    <option key={emp} value={emp}>{emp}</option>
+                  ))}
+                </select>
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Moneda</label>
-                      <select
-                      onTouchStart={handleTouchStart}
-                        className="w-full p-2 border rounded-lg"
-                        value={newTransaction.item}
-                        onChange={(e) => setNewTransaction(prev => ({
-                          ...prev,
-                          item: e.target.value as CurrencyType,
-                        }))}
-                      >
-                        <option value="dolares">Dólares</option>
-                        <option value="euros">Euros</option>
-                        <option value="reales">Reales</option>
-                        <option value="pesos">Pesos</option>
-                      </select>
-                    </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Moneda</label>
+                <select
+                  className="w-full p-2 border rounded-lg touch-manipulation"
+                  value={newTransaction.item}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    setNewTransaction(prev => ({
+                      ...prev,
+                      item: e.target.value as CurrencyType,
+                    }));
+                  }}
+                >
+                  <option value="dolares">Dólares</option>
+                  <option value="euros">Euros</option>
+                  <option value="reales">Reales</option>
+                  <option value="pesos">Pesos</option>
+                </select>
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Cantidad</label>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        className="w-full p-2 border rounded-lg"
-                        value={formData.amount}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/[^\d.]/g, '');
-                          setFormData(prev => ({ ...prev, amount: value }))
-                        }}
-                        placeholder="Cantidad"
-                      />
-                    </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Cantidad</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  className="w-full p-2 border rounded-lg touch-manipulation"
+                  value={formData.amount ? Number(formData.amount).toLocaleString('en-US') : ''}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    const value = e.target.value.replace(/[^\d.]/g, '');
+                    setFormData(prev => ({ ...prev, amount: value }));
+                  }}
+                  placeholder="Cantidad"
+                  onFocus={(e) => {
+                    e.stopPropagation();
+                    handleInputFocus(e);
+                  }}
+                />
+              </div>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Notas</label>
-                      <textarea
-                        className="w-full p-2 border rounded-lg"
-                        value={formData.notes}
-                        onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                        rows={2}
-                        placeholder="Agregar notas adicionales..."
-                      />
-                    </div>
+              <div>
+      <label className="block text-sm font-medium mb-1">Notas</label>
+      <textarea
+        className="w-full p-2 border rounded-lg touch-manipulation"
+        value={formData.notes}
+        onChange={(e) => {
+          e.stopPropagation();
+          setFormData(prev => ({ ...prev, notes: e.target.value }));
+        }}
+        rows={2}
+        placeholder="Agregar notas adicionales..."
+      />
+    </div>
 
-                    <button
-                      onClick={handleCreateExtraction}
-                      className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700
-                              disabled:bg-gray-400 disabled:cursor-not-allowed"
-                      disabled={!formData.amount || !newTransaction.employee}
-                    >
-                      Registrar Extracción
-                    </button>
-                  </div>
-                </div>
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        handleCreateExtraction();
+      }}
+      className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700
+               disabled:bg-gray-400 disabled:cursor-not-allowed"
+      disabled={!formData.amount || !newTransaction.employee}
+    >
+      Registrar Extracción
+    </button>
+  </div>
+</div>
               ) : (
                 // Your existing regular transaction form
                 <div className="bg-white shadow rounded-lg p-6">
@@ -1032,9 +1127,10 @@ export default function Home() {
                             <input
                               type="text"
                               placeholder="Buscar cliente..."
-                              className="w-full p-2 border rounded"
+                              className="w-full p-2 border rounded touch-manipulation"
                               value={formData.searchTerm}
                               onChange={(e) => setFormData(prev => ({ ...prev, searchTerm: e.target.value }))}
+                              onFocus={handleInputFocus}
                             />
                           )}
                           
@@ -1063,8 +1159,7 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Tipo de Operación</label>
                         <select
-                        onTouchStart={handleTouchStart}
-                          className="w-full p-2 border rounded-lg"
+                          className="w-full p-2 border rounded-lg touch-manipulation"
                           value={newTransaction.type}
                           onChange={(e) => setNewTransaction(prev => ({
                             ...prev,
@@ -1080,8 +1175,7 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Moneda</label>
                         <select
-                        onTouchStart={handleTouchStart}
-                          className="w-full p-2 border rounded-lg"
+                          className="w-full p-2 border rounded-lg touch-manipulation"
                           value={newTransaction.item}
                           onChange={(e) => setNewTransaction(prev => ({
                             ...prev,
@@ -1096,13 +1190,14 @@ export default function Home() {
                         <input
                           type="text"
                           inputMode="decimal"
-                          className="w-full mt-2 p-2 border rounded-lg"
+                          className="w-full mt-2 p-2 border  touch-manipulation"
                           value={formData.amount ? Number(formData.amount).toLocaleString('en-US') : ''}
                           onChange={(e) => {
                             const value = e.target.value.replace(/[^\d.]/g, '');
                             setFormData(prev => ({ ...prev, amount: value }))
                           }}
                           placeholder="Cantidad"
+                          onFocus={handleInputFocus}
                         />
                       </div>
                     </div>
@@ -1113,8 +1208,7 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Empleado</label>
                         <select
-                        onTouchStart={handleTouchStart}
-                          className="w-full p-2 border rounded-lg"
+                          className="w-full p-2 border rounded-lg touch-manipulation"
                           value={newTransaction.employee}
                           onChange={(e) => setNewTransaction(prev => ({ ...prev, employee: e.target.value }))}
                         >
@@ -1129,8 +1223,7 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Pago</label>
                         <select
-                        onTouchStart={handleTouchStart}
-                          className="w-full p-2 border rounded-lg"
+                          className="w-full p-2 border rounded-lg touch-manipulation"
                           value={newTransaction.payment}
                           onChange={(e) => setNewTransaction(prev => ({
                             ...prev,
@@ -1146,7 +1239,7 @@ export default function Home() {
                             type="text"
                             inputMode="decimal"
                             pattern="[0-9]*[.,]?[0-9]*"
-                            className="w-full mt-2 p-2 border rounded-lg bg-gray-50"
+                            className="w-full mt-2 p-2 border rounded-lg bg-gray-50 touch-manipulation"
                             value={calculatedPaymentAmount ? Number(calculatedPaymentAmount).toLocaleString('en-US') : ''}
                             onChange={(e) => {
                               const value = e.target.value.replace(/[,.]/g, '');
@@ -1155,6 +1248,7 @@ export default function Home() {
                               }
                             }}
                             placeholder="Monto calculado/manual"
+                            onFocus={handleInputFocus}
                           />
                       </div>
 
@@ -1162,7 +1256,7 @@ export default function Home() {
                       <div>
                         <label className="block text-sm font-medium mb-1">Notas</label>
                         <textarea
-                          className="w-full p-2 border rounded-lg"
+                          className="w-full p-2 border rounded-lg touch-manipulation"
                           value={formData.notes}
                           onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                           rows={2}
@@ -1451,8 +1545,7 @@ export default function Home() {
         <div className="bg-white shadow rounded p-4">
           <h2 className="text-lg font-semibold mb-4">Vista Empleado</h2>
           <select 
-          onTouchStart={handleTouchStart}
-            className="w-full p-2 border rounded mb-4"
+            className="w-full p-2 border rounded mb-4 touch-manipulation"
             value={selectedEmployee}
             onChange={e => setSelectedEmployee(e.target.value)}
           >
@@ -1495,9 +1588,10 @@ export default function Home() {
                     <input
                       type="text"
                       placeholder="Notas (opcional)"
-                      className="w-full p-2 border rounded"
+                      className="w-full p-2 border rounded touch-manipulation"
                       value={statusNote}
                       onChange={e => setStatusNote(e.target.value)}
+                      onFocus={handleInputFocus}
                     />
                     <div className="flex gap-2">
                     <button
@@ -1558,8 +1652,7 @@ export default function Home() {
                 
                 <div className="mt-4 space-y-2">
                   <select
-                  onTouchStart={handleTouchStart}
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border rounded touch-manipulation"
                     value={paymentCollector}
                     onChange={(e) => setPaymentCollector(e.target.value)}
                   >
@@ -1572,9 +1665,10 @@ export default function Home() {
                   <input
                     type="text"
                     placeholder="Notas de completación (opcional)"
-                    className="w-full p-2 border rounded"
+                    className="w-full p-2 border rounded touch-manipulation"
                     value={statusNote}
                     onChange={(e) => setStatusNote(e.target.value)}
+                    onFocus={handleInputFocus}
                   />
                   
                   <button
@@ -1611,6 +1705,10 @@ export default function Home() {
     transactions: Transaction[];
     setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   }) {
+    
+    // Prevent calculation loops with a ref
+    const calculationInProgress = useRef(false);
+    
     // State declarations
     const [currentInventory, setCurrentInventory] = useState<Inventory>({
       dolares: 0,
@@ -1618,91 +1716,60 @@ export default function Home() {
       reales: 0,
       pesos: 0
     });
-  
+    
     const [transactionNotes, setTransactionNotes] = useState<Record<string | number, string>>({});
     
     const [adjustmentsInput, setAdjustmentsInput] = useState<Record<keyof Inventory, string>>(() =>
       Object.fromEntries(Object.keys(inventory).map((key) => [key, ''])) as Record<keyof Inventory, string>
     );
-  
-    // Calculate Inventory function
-    const calculateInventory = useCallback(async (): Promise<Inventory> => {
-      const current: Inventory = {
-        dolares: 0,
-        euros: 0,
-        reales: 0,
-        pesos: 0
-      };
-      console.log('Starting inventory calculation');
-      
-      transactions
-        .sort((a, b) => a.id - b.id)
-        .forEach(t => {
-          if (t.status === 'completed') {
-            console.log('Processing transaction:', {
-              id: t.id,
-              type: t.type,
-              item: t.item,
-              amount: t.amount,
-              payment: t.payment,
-              paymentAmount: t.paymentAmount
-            });
-            
-            if (t.type === 'manual') {
-              current[t.item] += Number(t.amount) || 0;
-              console.log(`Manual adjustment: ${t.item} += ${t.amount}`);
-            } else if (t.type === 'extraccion'as TransactionType) {
-              current[t.item] -= Number(t.amount) || 0;
-              console.log(`Extraction: ${t.item} -= ${t.amount}`);
-            } else if (t.type === 'buy') {
-              current[t.item] -= Number(t.amount) || 0;
-              current[t.payment] += Number(t.paymentAmount) || 0;
-              console.log(`Buy: ${t.item} -= ${t.amount}, ${t.payment} += ${t.paymentAmount}`);
-            } else if (t.type === 'sell') {
-              current[t.item] += Number(t.amount) || 0;
-              current[t.payment] -= Number(t.paymentAmount) || 0;
-              console.log(`Sell: ${t.item} += ${t.amount}, ${t.payment} -= ${t.paymentAmount}`);
-            }
-            console.log('Current totals:', {...current});
-          }
-        });
-        
-      console.log('Final inventory:', current);
-      
-      try {
-        const timestamp = new Date().toISOString();
-        const inventoryRecords = Object.entries(current).map(([currency, amount]) => ({
-          currency,
-          amount,
-          last_updated: timestamp
-        }));
-        
-        console.log('Saving inventory to Supabase:', inventoryRecords);
-        
-        const { error } = await supabase
-          .from('inventory')
-          .insert(inventoryRecords);
-          
-        if (error) {
-          console.error('Error saving inventory to Supabase:', error);
-        }
-      } catch (error) {
-        console.error('Failed to save inventory:', error);
-      }
-      
-      return current;
-    }, [transactions]); // Add transactions as a dependency
     
-    // Then the useEffect remains almost the same
+   // Calculate Inventory function - removed Supabase inventory saving
+const calculateInventory = useCallback(async (): Promise<Inventory> => {
+  const current: Inventory = {
+    dolares: 0,
+    euros: 0,
+    reales: 0,
+    pesos: 0
+  };
+  
+  // Process only completed transactions
+  transactions
+    .filter(t => t.status === 'completed')
+    .sort((a, b) => a.id - b.id)
+    .forEach(t => {
+      if (t.type === 'manual') {
+        current[t.item] += Number(t.amount) || 0;
+      } else if (t.type === 'extraccion' as TransactionType) {
+        current[t.item] -= Number(t.amount) || 0;
+      } else if (t.type === 'buy') {
+        current[t.item] -= Number(t.amount) || 0;
+        current[t.payment] += Number(t.paymentAmount) || 0;
+      } else if (t.type === 'sell') {
+        current[t.item] += Number(t.amount) || 0;
+        current[t.payment] -= Number(t.paymentAmount) || 0;
+      }
+    });
+  
+  // Just return calculated values - no Supabase inventory updates
+  return current;
+}, [transactions]);
+    
+    // Update inventory state only when necessary
     useEffect(() => {
       const updateInventory = async () => {
         const calculated = await calculateInventory();
-        setCurrentInventory(calculated);
+        
+        // Only update if values changed to prevent flicker
+        if (JSON.stringify(calculated) !== JSON.stringify(currentInventory)) {
+          setCurrentInventory(calculated);
+          setInventory(calculated); // Update parent state too
+        }
       };
+      
       updateInventory();
-    }, [calculateInventory]);
-  
-    // Update transaction note function
+    }, [calculateInventory, setInventory]);
+    
+    // Update transaction note function - was missing in your component
     const updateTransactionNote = (transactionId: number, note: string) => {
       setTransactions(prev => prev.map(t => 
         t.id === transactionId 
@@ -1711,26 +1778,26 @@ export default function Home() {
       ));
       setTransactionNotes(prev => ({ ...prev, [transactionId]: '' }));
     };
-  
-    // Today's transactions memo
+    
+    // Today's transactions memo - was missing in your component
     const todaysTransactions = useMemo(() => {
       const today = new Date();
       const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
       
       return transactions
-        .filter(t => {
+        .filter((t: Transaction) => {
           const transactionDate = new Date(t.created_at || t.id);
           return transactionDate >= startOfToday && transactionDate <= endOfToday;
         })
-        .sort((a, b) => {
+        .sort((a: Transaction, b: Transaction) => {
           const dateA = new Date(a.created_at || a.id);
           const dateB = new Date(b.created_at || b.id);
           return dateB.getTime() - dateA.getTime();
         });
     }, [transactions]);
-  
-    // Apply adjustment function
+    
+    // Apply adjustment function with better state handling
     const applyAdjustment = async (item: keyof Inventory) => {
       const newValue = parseInt(adjustmentsInput[item], 10);
       
@@ -1739,36 +1806,31 @@ export default function Home() {
         
         if (difference !== 0) {
           try {
-            // Create the Supabase transaction first
+            // Create transaction in Supabase
             const supabaseTransaction = {
               type: 'manual',
               item: item,
               amount: difference,
               payment: 'pesos',
-              payment_amount: 0,  // Note: using snake_case for Supabase
+              payment_amount: 0,
               employee: 'Sistema',
               client_id: null,
               status: 'completed',
               notes: `Ajuste manual: ${difference > 0 ? 'añadidos' : 'restados'} ${Math.abs(difference)} ${item}`,
               created_at: new Date().toISOString()
             };
-    
-            console.log('Saving manual adjustment to Supabase:', supabaseTransaction);
             
             const { data, error } = await supabase
               .from('transactions')
               .insert([supabaseTransaction])
               .select();
-    
+            
             if (error) {
-              console.error('Supabase error:', error);
               throw error;
             }
-    
-            console.log('Supabase response:', data);
-    
+            
             if (data && data[0]) {
-              // Create the local transaction with the ID from Supabase
+              // Create a local transaction object for state update
               const newTransaction: Transaction = {
                 id: data[0].id,
                 type: 'manual',
@@ -1782,35 +1844,34 @@ export default function Home() {
                 notes: supabaseTransaction.notes,
                 created_at: supabaseTransaction.created_at
               };
-    
-              // Update local state
+              
+              // Add to transactions state which will trigger inventory recalculation
               setTransactions(prev => [newTransaction, ...prev]);
+              
+              // Clear input field
+              setAdjustmentsInput(prev => ({ ...prev, [item]: '' }));
             }
-    
-            // Clear input
-            setAdjustmentsInput(prev => ({ ...prev, [item]: '' }));
-    
           } catch (error) {
-            console.error('Error in applyAdjustment:', error);
+            console.error('Error saving adjustment to Supabase:', error);
             alert('Error al guardar el ajuste manual. Por favor, intente nuevamente.');
           }
         }
       }
     };
-  
-    // Component render
+    
+    // Rest of component rendering
     return (
       <div className="space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Inventario</h2>
         </div>
-  
+        
         {/* Current Inventory with Manual Adjustment Controls */}
         <div className="bg-white shadow rounded p-4">
           <h3 className="font-semibold mb-4">Inventario Actual</h3>
           <div className="grid grid-cols-2 gap-4">
-            {/* Top row */}
+            {/* Pesos row */}
             <div className="p-3 border rounded">
               <div className="font-medium capitalize">pesos</div>
               <div className={`text-lg ${currentInventory.pesos < 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -1819,6 +1880,7 @@ export default function Home() {
               <div className="mt-2 flex items-center gap-2">
                 <input
                   type="text"
+                  inputMode="numeric"
                   placeholder="Nuevo Total"
                   value={adjustmentsInput['pesos'] || ''}
                   onChange={(e) => {
@@ -1826,17 +1888,27 @@ export default function Home() {
                       setAdjustmentsInput(prev => ({ ...prev, pesos: e.target.value }));
                     }
                   }}
-                  className="w-full p-2 border rounded"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    const target = e.target as HTMLInputElement;
+                    setTimeout(() => target.focus(), 50);
+                  }}
+                  className="w-full p-2 border rounded touch-manipulation"
+                  onFocus={handleInputFocus}
                 />
                 <button
                   onClick={() => applyAdjustment('pesos')}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
                   className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                 >
                   Aplicar
                 </button>
               </div>
             </div>
-    
+            
+            {/* Dolares row */}
             <div className="p-3 border rounded">
               <div className="font-medium capitalize">dolares</div>
               <div className={`text-lg ${currentInventory.dolares < 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -1845,6 +1917,7 @@ export default function Home() {
               <div className="mt-2 flex items-center gap-2">
                 <input
                   type="text"
+                  inputMode="numeric"
                   placeholder="Nuevo Total"
                   value={adjustmentsInput['dolares'] || ''}
                   onChange={(e) => {
@@ -1852,18 +1925,27 @@ export default function Home() {
                       setAdjustmentsInput(prev => ({ ...prev, dolares: e.target.value }));
                     }
                   }}
-                  className="w-full p-2 border rounded"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    const target = e.target as HTMLInputElement;
+                    setTimeout(() => target.focus(), 50);
+                  }}
+                  className="w-full p-2 border rounded touch-manipulation"
+                  onFocus={handleInputFocus}
                 />
                 <button
                   onClick={() => applyAdjustment('dolares')}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
                   className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                 >
                   Aplicar
                 </button>
               </div>
             </div>
-    
-            {/* Bottom row */}
+            
+            {/* Euros row */}
             <div className="p-3 border rounded">
               <div className="font-medium capitalize">euros</div>
               <div className={`text-lg ${currentInventory.euros < 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -1872,6 +1954,7 @@ export default function Home() {
               <div className="mt-2 flex items-center gap-2">
                 <input
                   type="text"
+                  inputMode="numeric"
                   placeholder="Nuevo Total"
                   value={adjustmentsInput['euros'] || ''}
                   onChange={(e) => {
@@ -1879,17 +1962,27 @@ export default function Home() {
                       setAdjustmentsInput(prev => ({ ...prev, euros: e.target.value }));
                     }
                   }}
-                  className="w-full p-2 border rounded"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    const target = e.target as HTMLInputElement;
+                    setTimeout(() => target.focus(), 50);
+                  }}
+                  className="w-full p-2 border rounded touch-manipulation"
+                  onFocus={handleInputFocus}
                 />
                 <button
                   onClick={() => applyAdjustment('euros')}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
                   className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                 >
                   Aplicar
                 </button>
               </div>
             </div>
-    
+            
+            {/* Reales row */}
             <div className="p-3 border rounded">
               <div className="font-medium capitalize">reales</div>
               <div className={`text-lg ${currentInventory.reales < 0 ? 'text-red-600' : 'text-green-600'}`}>
@@ -1898,6 +1991,7 @@ export default function Home() {
               <div className="mt-2 flex items-center gap-2">
                 <input
                   type="text"
+                  inputMode="numeric"
                   placeholder="Nuevo Total"
                   value={adjustmentsInput['reales'] || ''}
                   onChange={(e) => {
@@ -1905,10 +1999,19 @@ export default function Home() {
                       setAdjustmentsInput(prev => ({ ...prev, reales: e.target.value }));
                     }
                   }}
-                  className="w-full p-2 border rounded"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => {
+                    e.stopPropagation();
+                    const target = e.target as HTMLInputElement;
+                    setTimeout(() => target.focus(), 50);
+                  }}
+                  className="w-full p-2 border rounded touch-manipulation"
+                  onFocus={handleInputFocus}
                 />
                 <button
                   onClick={() => applyAdjustment('reales')}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
                   className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
                 >
                   Aplicar
@@ -1917,12 +2020,12 @@ export default function Home() {
             </div>
           </div>
         </div>
-  
+        
         {/* Today's Transactions Section */}
         <div className="bg-white shadow rounded p-4">
           <h3 className="font-semibold mb-4">Transacciones de Hoy</h3>
           <div className="space-y-4">
-            {todaysTransactions.map((t) => (
+            {todaysTransactions.map((t: Transaction) => (
               <div
                 key={t.id}
                 className={`border p-3 rounded ${
@@ -1931,16 +2034,27 @@ export default function Home() {
                 }`}
               >
                 <div className="flex justify-between">
-                  <div>
+                <div>
                     <span className="font-medium">
                       {t.type === 'manual' ? 'Ajuste Manual' :
-                       t.type === 'buy' ? 'Compra' : 'Venta'} {t.amount} {t.item}
+                      t.type === 'buy' ? 'Compra' : 
+                      t.type === 'sell' ? 'Venta' : 
+                      t.type === 'extraccion' ? 'Extracción' : 
+                      t.type} de {t.amount} {t.item}
                     </span>
                     {t.client && (
                       <div className="text-sm text-gray-600">
                         Cliente: {t.client.name}
                       </div>
                     )}
+                    {t.type !== 'extraccion' && t.type !== 'manual' && (
+                      <div className="text-sm text-gray-600">
+                        Pago: {t.paymentAmount} {t.payment}
+                      </div>
+                    )}
+                    <div className="text-sm text-gray-600">
+                      <strong>Empleado:</strong> {t.employee}
+                    </div>
                     {t.notes && (
                       <div className="text-sm text-gray-600">{t.notes}</div>
                     )}
@@ -1971,7 +2085,14 @@ export default function Home() {
                       ...prev,
                       [t.id]: e.target.value
                     }))}
-                    className="w-full p-2 border rounded"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onTouchStart={(e) => {
+                      e.stopPropagation();
+                      const target = e.target as HTMLInputElement;
+                      setTimeout(() => target.focus(), 50);
+                    }}
+                    className="w-full p-2 border rounded touch-manipulation"
+                    onFocus={handleInputFocus}
                   />
                   <button
                     onClick={() => updateTransactionNote(t.id, transactionNotes[t.id])}
@@ -1983,7 +2104,7 @@ export default function Home() {
                 </div>
               </div>
             ))}
-  
+            
             {todaysTransactions.length === 0 && (
               <div className="text-gray-500 text-center py-4">
                 No hay transacciones hoy
@@ -2027,7 +2148,11 @@ export default function Home() {
             month: '2-digit',
             year: 'numeric'
           }),
-          t.type === 'manual' ? 'Ajuste Manual' : t.type === 'buy' ? 'Compra' : 'Venta',
+          t.type === 'manual' ? 'Ajuste Manual' : 
+          t.type === 'buy' ? 'Compra' : 
+          t.type === 'sell' ? 'Venta' : 
+          t.type === 'extraccion' ? 'Extracción' : 
+          t.type, // Fallback for any other types
           t.client?.name || '',
           t.item,
           t.amount,
@@ -2139,7 +2264,11 @@ const groupedTransactions = useMemo(() => {
                     month: '2-digit',
                     year: 'numeric'
                 }),
-                t.type === 'manual' ? 'Ajuste Manual' : t.type === 'buy' ? 'Compra' : 'Venta',
+                t.type === 'manual' ? 'Ajuste Manual' : 
+                t.type === 'buy' ? 'Compra' : 
+                t.type === 'sell' ? 'Venta' : 
+                t.type === 'extraccion' ? 'Extracción' : 
+                t.type,
                 t.client?.name || '',
                 t.item,
                 t.amount,
@@ -2180,7 +2309,6 @@ const groupedTransactions = useMemo(() => {
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-4">
           <select
-          onTouchStart={handleTouchStart}
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as 'day' | 'week' | 'month')}
             className="border rounded p-2"
@@ -2245,22 +2373,30 @@ const groupedTransactions = useMemo(() => {
                   >
                     <div className="flex justify-between">
                       <div>
-                        <span className="font-medium">
-                          {t.type === 'manual' ? 'Ajuste Manual' :
-                           t.type === 'buy' ? 'Compra' : 'Venta'}
-                        </span>
+                      <span className="font-medium">
+                        {t.type === 'manual' ? 'Ajuste Manual' : 
+                        t.type === 'buy' ? 'Compra' : 
+                        t.type === 'sell' ? 'Venta' : 
+                        t.type === 'extraccion' ? 'Extracción' : 
+                        t.type}
+                      </span>
                         <div className="text-sm text-gray-600">
-                          {t.type === 'manual' ? (
-                            <p>{t.amount > 0 ? 'Añadidos' : 'Restados'} {Math.abs(t.amount)} {t.item}</p>
-                          ) : (
-                            <>
-                              <p>Cliente: {t.client?.name}</p>
-                              <p>{t.amount} {t.item} {t.type === 'buy' ? 'por' : 'a cambio de'} {t.paymentAmount} {t.payment}</p>
-                              <p>Empleado: {t.employee}</p>
-                            </>
-                          )}
-                          {t.notes && <p className="mt-1"><strong>Notas:</strong> {t.notes}</p>}
-                        </div>
+                        {t.type === 'manual' ? (
+                          <p>{t.amount > 0 ? 'Añadidos' : 'Restados'} {Math.abs(t.amount)} {t.item}</p>
+                        ) : t.type === 'extraccion' ? (
+                          <>
+                            <p><strong>Extracción:</strong> {t.amount} {t.item}</p>
+                            <p><strong>Empleado:</strong> {t.employee}</p>
+                          </>
+                        ) : (
+                          <>
+                            <p><strong>Cliente:</strong> {t.client?.name || 'Sin cliente'}</p>
+                            <p>{t.amount} {t.item} {t.type === 'buy' ? 'por' : 'a cambio de'} {t.paymentAmount} {t.payment}</p>
+                            <p><strong>Empleado:</strong> {t.employee}</p>
+                          </>
+                        )}
+                        {t.notes && <p className="mt-1"><strong>Notas:</strong> {t.notes}</p>}
+                      </div>
                       </div>
                       <div className="text-right">
                         <div className={`font-medium ${
@@ -2288,13 +2424,13 @@ const groupedTransactions = useMemo(() => {
     </div>
   );
   }
-
+/*
   useEffect(() => {
     console.log("All transactions:", transactions);
     console.log("Completed transactions:", transactions.filter(t => t.status === 'completed'));
     console.log("Current inventory:", inventory);
   }, [transactions, inventory]);
-
+*/
 
    // Add the authentication checks before the main return
    if (!user) {
