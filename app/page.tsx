@@ -1574,10 +1574,10 @@ export default function Home() {
                   </div>
                   <div className="my-2">
                     <p>
-                      {order.type === 'buy' ? 'Comprar' : 'Vender'} {order.amount} {order.item}
+                    {order.type === 'buy' ? 'Comprar' : 'Vender'} {Number(order.amount).toLocaleString('en-US')} {order.item}
                     </p>
-                    <p>Pago: {order.paymentAmount} {order.payment}</p>
-                  </div>
+                    <p>Pago: {Number(order.paymentAmount).toLocaleString('en-US')} {order.payment}</p>
+                    </div>
                   {/* Add this to show the original notes */}
                   {order.notes && (
                     <div className="my-2 p-2 bg-gray-50 rounded">
@@ -1634,10 +1634,10 @@ export default function Home() {
                       {transaction.type === 'buy' ? 'Compra' : 
                       transaction.type === 'sell' ? 'Venta' : 
                       transaction.type === 'extraccion' ? 'Extracción' : 
-                      transaction.type} {transaction.amount} {transaction.item}
+                      transaction.type} {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Pago pendiente: {transaction.paymentAmount} {transaction.payment}
+                    Pago pendiente: {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
                     </p>
                     {transaction.notes && (
                       <div className="mt-2 p-2 bg-gray-50 rounded">

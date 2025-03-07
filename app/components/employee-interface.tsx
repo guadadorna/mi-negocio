@@ -26,7 +26,6 @@ const Login = ({ onLogin }: { onLogin: (user: User) => void }) => {
       'tiburon': 'employee',
       'pollito': 'employee'
     };
-
     if (username.toLowerCase() in users) {
       onLogin({
         username: username.toLowerCase(),
@@ -227,7 +226,7 @@ const EmployeeDashboard = ({
                       {transaction.type === 'buy' ? 'Compra' : 'Venta'} de {transaction.amount} {transaction.item}
                     </p>
                     <p className="text-sm text-gray-600">
-                      Pago: {transaction.paymentAmount} {transaction.payment}
+                    Pago: {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
                     </p>
                     {transaction.notes && (
                       <p className="text-sm text-gray-600 mt-2">
@@ -341,13 +340,13 @@ const EmployeeDashboard = ({
                           <div className="flex justify-between items-start">
                             <div>
                               <p className="font-medium">
-                                {transaction.type === 'buy' ? 'Compra' : 'Venta'} de {transaction.amount} {transaction.item}
+                              {transaction.type === 'buy' ? 'Compra' : 'Venta'} de {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
                               </p>
                               {transaction.client && (
                                 <p className="text-sm text-gray-600">Cliente: {transaction.client.name}</p>
                               )}
                               <p className="text-sm text-gray-600">
-                                Pago: {transaction.paymentAmount} {transaction.payment}
+                              Pago: {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
                               </p>
                               {transaction.notes && (
                                 <p className="text-sm text-gray-600 mt-1">
