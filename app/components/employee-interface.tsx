@@ -223,7 +223,7 @@ const EmployeeDashboard = ({
                   <div>
                     <p className="font-semibold">{transaction.client?.name}</p>
                     <p className="text-sm text-gray-600">
-                      {transaction.type === 'buy' ? 'Compra' : 'Venta'} de {transaction.amount} {transaction.item}
+                    {transaction.type === 'buy' ? 'Compra' : 'Venta'} de {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
                     </p>
                     <p className="text-sm text-gray-600">
                     Pago: {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
