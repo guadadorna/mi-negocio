@@ -209,7 +209,7 @@ const EmployeeDashboard = ({
       </div>
   
       {/* Pending Transactions Section */}
-      // Complete code for the pending transactions section in EmployeeDashboard
+     // Complete code for the pending transactions section in EmployeeDashboard
 
 {/* Pending Transactions Section */}
 <div className="mb-6 bg-white shadow rounded-lg p-4">

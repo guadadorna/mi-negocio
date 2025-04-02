@@ -1770,7 +1770,7 @@ useEffect(() => {
   };
   
   updateInventory();
-}, [calculateInventory, setInventory]);
+}, [calculateInventory, setInventory, currentInventory]);
 
     // Update transaction note function - was missing in your component
     const updateTransactionNote = (transactionId: number, note: string) => {
