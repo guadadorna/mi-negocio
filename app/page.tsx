@@ -1557,140 +1557,107 @@ export default function Home() {
           </select>
     
           {/* Pending Orders Section */}
-          {selectedEmployee && (
-            <>
-              <h3 className="font-semibold mb-4">Órdenes pendientes para {selectedEmployee}</h3>
-              {employeeOrders.map(order => (
-                <div key={order.id} className="border p-4 rounded">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="font-semibold">{order.client!.name}</p>
-                      <p className="text-sm text-gray-600">{order.client!.address}</p>
-                      <p className="text-sm text-gray-600">{order.client!.phone}</p>
-                    </div>
-                    <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">
-                      Pendiente
-                    </span>
-                  </div>
-                  <div className="my-2">
-                    <p>
-                    {order.type === 'buy' ? 'Comprar' : 'Vender'} {Number(order.amount).toLocaleString('en-US')} {order.item}
-                    </p>
-                    <p>Pago: {Number(order.paymentAmount).toLocaleString('en-US')} {order.payment}</p>
-                    </div>
-                  {/* Add this to show the original notes */}
-                  {order.notes && (
-                    <div className="my-2 p-2 bg-gray-50 rounded">
-                      <p className="text-sm font-semibold">Notas:</p>
-                      <p className="text-sm text-gray-600">{order.notes}</p>
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <input
-                      type="text"
-                      placeholder="Notas (opcional)"
-                      className="w-full p-2 border rounded touch-manipulation"
-                      value={statusNote}
-                      onChange={e => setStatusNote(e.target.value)}
-                      onFocus={handleInputFocus}
-                    />
-                    <div className="flex gap-2">
-                    <button
-                        onClick={async () => await updateOrderStatus(order.id, 'completed')}
-                        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex-1"
-                      >
-                        Completada
-                      </button>
-                      <button
-                        onClick={async () => await updateOrderStatus(order.id, 'cancelled')}
-                        className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 flex-1"
-                      >
-                        Cancelada
-                      </button>
-                      <button
-                        onClick={async () => await updateOrderStatus(order.id, 'payment_delayed')}
-                        className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 flex-1"
-                      >
-                        Pago Demorado
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </>
-          )}
+          // Complete code for the order display section in the EmployeeView component
+
+{/* Pending Orders Section */}
+{selectedEmployee && (
+  <>
+    <h3 className="font-semibold mb-4">Órdenes pendientes para {selectedEmployee}</h3>
+    {employeeOrders.map(order => (
+      <div key={order.id} className="border p-4 rounded">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <p className="font-semibold">{order.client!.name}</p>
+            <p className="text-sm text-gray-600">{order.client!.address}</p>
+            <p className="text-sm text-gray-600">{order.client!.phone}</p>
+          </div>
+          <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-sm">
+            Pendiente
+          </span>
+        </div>
+        <div className="my-2">
+          <p>
+            {order.type === 'buy' ? 'Comprar' : 'Vender'} {Number(order.amount).toLocaleString('en-US')} {order.item}
+          </p>
+          <p>Pago: {Number(order.paymentAmount).toLocaleString('en-US')} {order.payment}</p>
+        </div>
+        {/* Add this to show the original notes */}
+        {order.notes && (
+          <div className="my-2 p-2 bg-gray-50 rounded">
+            <p className="text-sm font-semibold">Notas:</p>
+            <p className="text-sm text-gray-600">{order.notes}</p>
+          </div>
+        )}
+        <div className="space-y-2">
+          <input
+            type="text"
+            placeholder="Notas (opcional)"
+            className="w-full p-2 border rounded touch-manipulation"
+            value={statusNote}
+            onChange={e => setStatusNote(e.target.value)}
+            onFocus={handleInputFocus}
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={async () => await updateOrderStatus(order.id, 'completed')}
+              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex-1"
+            >
+              Completada
+            </button>
+            <button
+              onClick={async () => await updateOrderStatus(order.id, 'cancelled')}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 flex-1"
+            >
+              Cancelada
+            </button>
+            <button
+              onClick={async () => await updateOrderStatus(order.id, 'payment_delayed')}
+              className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 flex-1"
+            >
+              Pago Demorado
+            </button>
+          </div>
+        </div>
+      </div>
+    ))}
+    {employeeOrders.length === 0 && (
+      <div className="text-center py-4 text-gray-500">
+        No hay órdenes pendientes para este empleado
+      </div>
+    )}
+  </>
+)}
         </div>
     
         {/* New Pending Payments Section */}
         <div className="bg-white shadow rounded p-4">
-          <h3 className="text-lg font-semibold mb-4">Pagos Pendientes</h3>
-          <div className="space-y-4">
-            {pendingPayments.map((transaction) => (
-              <div key={transaction.id} className="border p-4 rounded bg-yellow-50">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-semibold">{transaction.client!.name}</p>
-                    <p className="text-sm text-gray-600">
-                      {transaction.type === 'buy' ? 'Compra' : 
-                      transaction.type === 'sell' ? 'Venta' : 
-                      transaction.type === 'extraccion' ? 'Extracción' : 
-                      transaction.type} {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                    Pago pendiente: {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
-                    </p>
-                    {transaction.notes && (
-                      <div className="mt-2 p-2 bg-gray-50 rounded">
-                        <p className="text-sm font-semibold">Notas originales:</p>
-                        <p className="text-sm text-gray-600">{transaction.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-yellow-600 text-sm">
-                    Registrado por: {transaction.delayedBy}
-                  </span>
-                </div>
-                
-                <div className="mt-4 space-y-2">
-                  <select
-                    className="w-full p-2 border rounded touch-manipulation"
-                    value={paymentCollector}
-                    onChange={(e) => setPaymentCollector(e.target.value)}
-                  >
-                    <option value="">Seleccionar empleado que recibió el pago</option>
-                    {['Juan','Veneno', 'Chinda','Pancho','Tiburon','Pollito' ].map((emp) => (
-                      <option key={emp} value={emp}>{emp}</option>
-                    ))}
-                  </select>
-                  
-                  <input
-                    type="text"
-                    placeholder="Notas de completación (opcional)"
-                    className="w-full p-2 border rounded touch-manipulation"
-                    value={statusNote}
-                    onChange={(e) => setStatusNote(e.target.value)}
-                    onFocus={handleInputFocus}
-                  />
-                  
-                  <button
-                    onClick={() => {
-                      if (paymentCollector) {
-                        completeDelayedPayment(transaction, paymentCollector, statusNote);
-                        setPaymentCollector('');
-                        setStatusNote('');
-                      }
-                    }}
-                    disabled={!paymentCollector}
-                    className="w-full bg-green-500 text-white p-2 rounded hover:bg-green-600 
-                             disabled:bg-gray-300 disabled:cursor-not-allowed"
-                  >
-                    Marcar Pago Completado
-                  </button>
-                </div>
-              </div>
-            ))}
+  <h3 className="text-lg font-semibold mb-4">Pagos Pendientes</h3>
+  <div className="space-y-4">
+    {pendingPayments.map((transaction) => (
+      <div key={transaction.id} className="border p-4 rounded bg-yellow-50">
+        <div className="flex justify-between items-start">
+          <div>
+            <p className="font-semibold">{transaction.client!.name}</p>
+            {/* Add the address here */}
+            <p className="text-sm text-gray-600">{transaction.client!.address}</p>
+            <p className="text-sm text-gray-600">
+              {transaction.type === 'buy' ? 'Compra' : 
+              transaction.type === 'sell' ? 'Venta' : 
+              transaction.type === 'extraccion' ? 'Extracción' : 
+              transaction.type} {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
+            </p>
+            <p className="text-sm text-gray-600">
+              Pago pendiente: {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
+            </p>
+            {/* Rest of existing code */}
           </div>
+          {/* Rest of existing code */}
         </div>
+        {/* Rest of existing code */}
+      </div>
+    ))}
+  </div>
+</div>
       </div>
     );
   }
@@ -1717,6 +1684,13 @@ export default function Home() {
       reales: 0,
       pesos: 0
     });
+
+    const [pendingInventory, setPendingInventory] = useState<Inventory>({
+      dolares: 0,
+      euros: 0,
+      reales: 0,
+      pesos: 0
+    });
     
     const [transactionNotes, setTransactionNotes] = useState<Record<string | number, string>>({});
     
@@ -1724,8 +1698,8 @@ export default function Home() {
       Object.fromEntries(Object.keys(inventory).map((key) => [key, ''])) as Record<keyof Inventory, string>
     );
     
-   // Calculate Inventory function - removed Supabase inventory saving
-const calculateInventory = useCallback(async (): Promise<Inventory> => {
+ // Replace the calculateInventory function in the InventoryView component with this:
+const calculateInventory = useCallback(async (): Promise<{ current: Inventory, pending: Inventory }> => {
   const current: Inventory = {
     dolares: 0,
     euros: 0,
@@ -1733,14 +1707,21 @@ const calculateInventory = useCallback(async (): Promise<Inventory> => {
     pesos: 0
   };
   
-  // Process only completed transactions
+  const pending: Inventory = {
+    dolares: 0,
+    euros: 0,
+    reales: 0,
+    pesos: 0
+  };
+  
+  // First calculate the current inventory (completed transactions only)
   transactions
     .filter(t => t.status === 'completed')
     .sort((a, b) => a.id - b.id)
     .forEach(t => {
       if (t.type === 'manual') {
         current[t.item] += Number(t.amount) || 0;
-      } else if (t.type === 'extraccion' as TransactionType) {
+      } else if (t.type === 'extraccion') {
         current[t.item] -= Number(t.amount) || 0;
       } else if (t.type === 'buy') {
         current[t.item] += Number(t.amount) || 0;
@@ -1751,25 +1732,46 @@ const calculateInventory = useCallback(async (): Promise<Inventory> => {
       }
     });
   
-  // Just return calculated values - no Supabase inventory updates
-  return current;
+  // Copy current inventory as a starting point for pending inventory
+  Object.keys(current).forEach(key => {
+    pending[key as keyof Inventory] = current[key as keyof Inventory];
+  });
+  
+  // Then add pending transactions to the pending inventory
+  transactions
+    .filter(t => t.status === 'pending')
+    .sort((a, b) => a.id - b.id)
+    .forEach(t => {
+      if (t.type === 'buy') {
+        pending[t.item] += Number(t.amount) || 0;
+        pending[t.payment] -= Number(t.paymentAmount) || 0;
+      } else if (t.type === 'sell') {
+        pending[t.item] -= Number(t.amount) || 0;
+        pending[t.payment] += Number(t.paymentAmount) || 0;
+      }
+    });
+  
+  return { current, pending };
 }, [transactions]);
+
+// Update the useEffect to handle both inventory types
+useEffect(() => {
+  const updateInventory = async () => {
+    const { current, pending } = await calculateInventory();
     
-    // Update inventory state only when necessary
-    useEffect(() => {
-      const updateInventory = async () => {
-        const calculated = await calculateInventory();
-        
-        // Only update if values changed to prevent flicker
-        if (JSON.stringify(calculated) !== JSON.stringify(currentInventory)) {
-          setCurrentInventory(calculated);
-          setInventory(calculated); // Update parent state too
-        }
-      };
-      
-      updateInventory();
-    }, [calculateInventory, setInventory]);
+    // Update current inventory state if changed
+    if (JSON.stringify(current) !== JSON.stringify(currentInventory)) {
+      setCurrentInventory(current);
+      setInventory(current); // Update parent state too
+    }
     
+    // Update pending inventory state
+    setPendingInventory(pending);
+  };
+  
+  updateInventory();
+}, [calculateInventory, setInventory]);
+
     // Update transaction note function - was missing in your component
     const updateTransactionNote = (transactionId: number, note: string) => {
       setTransactions(prev => prev.map(t => 
@@ -1869,158 +1871,209 @@ const calculateInventory = useCallback(async (): Promise<Inventory> => {
         </div>
         
         {/* Current Inventory with Manual Adjustment Controls */}
-        <div className="bg-white shadow rounded p-4">
-          <h3 className="font-semibold mb-4">Inventario Actual</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {/* Pesos row */}
-            <div className="p-3 border rounded">
-              <div className="font-medium capitalize">pesos</div>
-              <div className={`text-lg ${currentInventory.pesos < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {Number(currentInventory.pesos).toLocaleString('en-US')}
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Nuevo Total"
-                  value={adjustmentsInput['pesos'] || ''}
-                  onChange={(e) => {
-                    if (/^-?\d*$/.test(e.target.value)) {
-                      setAdjustmentsInput(prev => ({ ...prev, pesos: e.target.value }));
-                    }
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => {
-                    e.stopPropagation();
-                    const target = e.target as HTMLInputElement;
-                    setTimeout(() => target.focus(), 50);
-                  }}
-                  className="w-full p-2 border rounded touch-manipulation"
-                  onFocus={handleInputFocus}
-                />
-                <button
-                  onClick={() => applyAdjustment('pesos')}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                >
-                  Aplicar
-                </button>
-              </div>
-            </div>
-            
-            {/* Dolares row */}
-            <div className="p-3 border rounded">
-              <div className="font-medium capitalize">dolares</div>
-              <div className={`text-lg ${currentInventory.dolares < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {Number(currentInventory.dolares).toLocaleString('en-US')}
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Nuevo Total"
-                  value={adjustmentsInput['dolares'] || ''}
-                  onChange={(e) => {
-                    if (/^-?\d*$/.test(e.target.value)) {
-                      setAdjustmentsInput(prev => ({ ...prev, dolares: e.target.value }));
-                    }
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => {
-                    e.stopPropagation();
-                    const target = e.target as HTMLInputElement;
-                    setTimeout(() => target.focus(), 50);
-                  }}
-                  className="w-full p-2 border rounded touch-manipulation"
-                  onFocus={handleInputFocus}
-                />
-                <button
-                  onClick={() => applyAdjustment('dolares')}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                >
-                  Aplicar
-                </button>
-              </div>
-            </div>
-            
-            {/* Euros row */}
-            <div className="p-3 border rounded">
-              <div className="font-medium capitalize">euros</div>
-              <div className={`text-lg ${currentInventory.euros < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {Number(currentInventory.euros).toLocaleString('en-US')}
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Nuevo Total"
-                  value={adjustmentsInput['euros'] || ''}
-                  onChange={(e) => {
-                    if (/^-?\d*$/.test(e.target.value)) {
-                      setAdjustmentsInput(prev => ({ ...prev, euros: e.target.value }));
-                    }
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => {
-                    e.stopPropagation();
-                    const target = e.target as HTMLInputElement;
-                    setTimeout(() => target.focus(), 50);
-                  }}
-                  className="w-full p-2 border rounded touch-manipulation"
-                  onFocus={handleInputFocus}
-                />
-                <button
-                  onClick={() => applyAdjustment('euros')}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                >
-                  Aplicar
-                </button>
-              </div>
-            </div>
-            
-            {/* Reales row */}
-            <div className="p-3 border rounded">
-              <div className="font-medium capitalize">reales</div>
-              <div className={`text-lg ${currentInventory.reales < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {Number(currentInventory.reales).toLocaleString('en-US')}
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Nuevo Total"
-                  value={adjustmentsInput['reales'] || ''}
-                  onChange={(e) => {
-                    if (/^-?\d*$/.test(e.target.value)) {
-                      setAdjustmentsInput(prev => ({ ...prev, reales: e.target.value }));
-                    }
-                  }}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => {
-                    e.stopPropagation();
-                    const target = e.target as HTMLInputElement;
-                    setTimeout(() => target.focus(), 50);
-                  }}
-                  className="w-full p-2 border rounded touch-manipulation"
-                  onFocus={handleInputFocus}
-                />
-                <button
-                  onClick={() => applyAdjustment('reales')}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onTouchStart={(e) => e.stopPropagation()}
-                  className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
-                >
-                  Aplicar
-                </button>
-              </div>
-            </div>
-          </div>
+        {/* Replace the "Current Inventory with Manual Adjustment Controls" section */}
+<div className="bg-white shadow rounded p-4">
+  <h3 className="font-semibold mb-4">Inventario Actual</h3>
+  <div className="grid grid-cols-2 gap-4">
+    {/* Pesos row */}
+    <div className="p-3 border rounded">
+      <div className="font-medium capitalize">pesos</div>
+      <div className="space-y-1">
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">CAJA:</span>
+          <span className={`${currentInventory.pesos < 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {Number(currentInventory.pesos).toLocaleString('en-US')}
+          </span>
         </div>
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">INVENTARIO:</span>
+          <span className={`${pendingInventory.pesos < 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {Number(pendingInventory.pesos).toLocaleString('en-US')}
+          </span>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Nuevo Total"
+          value={adjustmentsInput['pesos'] || ''}
+          onChange={(e) => {
+            if (/^-?\d*$/.test(e.target.value)) {
+              setAdjustmentsInput(prev => ({ ...prev, pesos: e.target.value }));
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            const target = e.target as HTMLInputElement;
+            setTimeout(() => target.focus(), 50);
+          }}
+          className="w-full p-2 border rounded touch-manipulation"
+          onFocus={handleInputFocus}
+        />
+        <button
+          onClick={() => applyAdjustment('pesos')}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+        >
+          Aplicar
+        </button>
+      </div>
+    </div>
+    
+    {/* Dolares row */}
+    <div className="p-3 border rounded">
+      <div className="font-medium capitalize">dolares</div>
+      <div className="space-y-1">
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">CAJA:</span>
+          <span className={`${currentInventory.dolares < 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {Number(currentInventory.dolares).toLocaleString('en-US')}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">INVENTARIO:</span>
+          <span className={`${pendingInventory.dolares < 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {Number(pendingInventory.dolares).toLocaleString('en-US')}
+          </span>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Nuevo Total"
+          value={adjustmentsInput['dolares'] || ''}
+          onChange={(e) => {
+            if (/^-?\d*$/.test(e.target.value)) {
+              setAdjustmentsInput(prev => ({ ...prev, dolares: e.target.value }));
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            const target = e.target as HTMLInputElement;
+            setTimeout(() => target.focus(), 50);
+          }}
+          className="w-full p-2 border rounded touch-manipulation"
+          onFocus={handleInputFocus}
+        />
+        <button
+          onClick={() => applyAdjustment('dolares')}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+        >
+          Aplicar
+        </button>
+      </div>
+    </div>
+    
+    {/* Euros row */}
+    <div className="p-3 border rounded">
+      <div className="font-medium capitalize">euros</div>
+      <div className="space-y-1">
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">CAJA:</span>
+          <span className={`${currentInventory.euros < 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {Number(currentInventory.euros).toLocaleString('en-US')}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">INVENTARIO:</span>
+          <span className={`${pendingInventory.euros < 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {Number(pendingInventory.euros).toLocaleString('en-US')}
+          </span>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Nuevo Total"
+          value={adjustmentsInput['euros'] || ''}
+          onChange={(e) => {
+            if (/^-?\d*$/.test(e.target.value)) {
+              setAdjustmentsInput(prev => ({ ...prev, euros: e.target.value }));
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            const target = e.target as HTMLInputElement;
+            setTimeout(() => target.focus(), 50);
+          }}
+          className="w-full p-2 border rounded touch-manipulation"
+          onFocus={handleInputFocus}
+        />
+        <button
+          onClick={() => applyAdjustment('euros')}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+        >
+          Aplicar
+        </button>
+      </div>
+    </div>
+    
+    {/* Reales row */}
+    <div className="p-3 border rounded">
+      <div className="font-medium capitalize">reales</div>
+      <div className="space-y-1">
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">CAJA:</span>
+          <span className={`${currentInventory.reales < 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {Number(currentInventory.reales).toLocaleString('en-US')}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-sm font-medium">INVENTARIO:</span>
+          <span className={`${pendingInventory.reales < 0 ? 'text-red-600' : 'text-green-600'}`}>
+            {Number(pendingInventory.reales).toLocaleString('en-US')}
+          </span>
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-2">
+        <input
+          type="text"
+          inputMode="numeric"
+          placeholder="Nuevo Total"
+          value={adjustmentsInput['reales'] || ''}
+          onChange={(e) => {
+            if (/^-?\d*$/.test(e.target.value)) {
+              setAdjustmentsInput(prev => ({ ...prev, reales: e.target.value }));
+            }
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            const target = e.target as HTMLInputElement;
+            setTimeout(() => target.focus(), 50);
+          }}
+          className="w-full p-2 border rounded touch-manipulation"
+          onFocus={handleInputFocus}
+        />
+        <button
+          onClick={() => applyAdjustment('reales')}
+          onMouseDown={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600"
+        >
+          Aplicar
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  {/* Legend explaining CAJA vs INVENTARIO */}
+  <div className="mt-4 p-3 bg-gray-50 rounded border text-sm">
+    <p><strong>CAJA:</strong> Solo incluye transacciones completadas</p>
+    <p><strong>INVENTARIO:</strong> Incluye transacciones pendientes y completadas</p>
+  </div>
+</div>
         
         {/* Today's Transactions Section */}
         <div className="bg-white shadow rounded p-4">

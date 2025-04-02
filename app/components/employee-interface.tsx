@@ -209,73 +209,77 @@ const EmployeeDashboard = ({
       </div>
   
       {/* Pending Transactions Section */}
-      <div className="mb-6 bg-white shadow rounded-lg p-4">
-        <h2 className="text-xl font-semibold mb-4">Órdenes Pendientes</h2>
-        <div className="space-y-4">
-          {transactions
-            .filter(t => t.employee.toLowerCase() === username && t.status === 'pending')
-            .map(transaction => (
-              <div 
-                key={transaction.id} 
-                className="p-4 rounded-lg shadow bg-yellow-50 border border-yellow-200"
+      // Complete code for the pending transactions section in EmployeeDashboard
+
+{/* Pending Transactions Section */}
+<div className="mb-6 bg-white shadow rounded-lg p-4">
+  <h2 className="text-xl font-semibold mb-4">Órdenes Pendientes</h2>
+  <div className="space-y-4">
+    {transactions
+      .filter(t => t.employee.toLowerCase() === username && t.status === 'pending')
+      .map(transaction => (
+        <div 
+          key={transaction.id} 
+          className="p-4 rounded-lg shadow bg-yellow-50 border border-yellow-200"
+        >
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <p className="font-semibold">{transaction.client?.name}</p>
+              <p className="text-sm text-gray-600">{transaction.client?.address}</p>
+              <p className="text-sm text-gray-600">
+                {transaction.type === 'buy' ? 'Compra' : 'Venta'} de {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
+              </p>
+              <p className="text-sm text-gray-600">
+                Pago: {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
+              </p>
+              {transaction.notes && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Notas: {transaction.notes}
+                </p>
+              )}
+            </div>
+            <span className="px-2 py-1 rounded text-sm bg-yellow-200 text-yellow-800">
+              Pendiente
+            </span>
+          </div>
+          <div className="space-y-2">
+            <input
+              type="text"
+              placeholder="Notas (opcional)"
+              className="w-full p-2 border rounded"
+              value={statusNote}
+              onChange={e => setStatusNote(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => updateOrderStatus(transaction.id, 'completed')}
+                className="flex-1 bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="font-semibold">{transaction.client?.name}</p>
-                    <p className="text-sm text-gray-600">
-                    {transaction.type === 'buy' ? 'Compra' : 'Venta'} de {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                    Pago: {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
-                    </p>
-                    {transaction.notes && (
-                      <p className="text-sm text-gray-600 mt-2">
-                        Notas: {transaction.notes}
-                      </p>
-                    )}
-                  </div>
-                  <span className="px-2 py-1 rounded text-sm bg-yellow-200 text-yellow-800">
-                    Pendiente
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Notas (opcional)"
-                    className="w-full p-2 border rounded"
-                    value={statusNote}
-                    onChange={e => setStatusNote(e.target.value)}
-                  />
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => updateOrderStatus(transaction.id, 'completed')}
-                      className="flex-1 bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600"
-                    >
-                      Completar
-                    </button>
-                    <button
-                      onClick={() => updateOrderStatus(transaction.id, 'cancelled')}
-                      className="flex-1 bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={() => updateOrderStatus(transaction.id, 'payment_delayed')}
-                      className="flex-1 bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600"
-                    >
-                      Pago Demorado
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          {transactions.filter(t => 
-            t.employee.toLowerCase() === username && t.status === 'pending'
-          ).length === 0 && (
-            <p className="text-center text-gray-500">No hay órdenes pendientes</p>
-          )}
+                Completar
+              </button>
+              <button
+                onClick={() => updateOrderStatus(transaction.id, 'cancelled')}
+                className="flex-1 bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => updateOrderStatus(transaction.id, 'payment_delayed')}
+                className="flex-1 bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600"
+              >
+                Pago Demorado
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      ))}
+    {transactions.filter(t => 
+      t.employee.toLowerCase() === username && t.status === 'pending'
+    ).length === 0 && (
+      <p className="text-center text-gray-500">No hay órdenes pendientes</p>
+    )}
+  </div>
+</div>
   
       {/* Historical Transactions Section */}
       <div className="bg-white shadow rounded-lg p-4">
@@ -325,49 +329,38 @@ const EmployeeDashboard = ({
                 </button>
   
                 {expandedGroups.has(date) && (
-                  <div className="mt-4 space-y-3">
-                    {groupTransactions
-                      .filter(t => t.status !== 'pending')
-                      .map(transaction => (
-                        <div 
-                          key={transaction.id} 
-                          className={`p-3 rounded-lg ${
-                            transaction.status === 'completed' ? 'bg-green-50 border-green-200' :
-                            transaction.status === 'cancelled' ? 'bg-red-50 border-red-200' :
-                            'bg-orange-50 border-orange-200'
-                          } border`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-medium">
-                              {transaction.type === 'buy' ? 'Compra' : 'Venta'} de {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
-                              </p>
-                              {transaction.client && (
-                                <p className="text-sm text-gray-600">Cliente: {transaction.client.name}</p>
-                              )}
-                              <p className="text-sm text-gray-600">
-                              Pago: {Number(transaction.paymentAmount).toLocaleString('en-US')} {transaction.payment}
-                              </p>
-                              {transaction.notes && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  Notas: {transaction.notes}
-                                </p>
-                              )}
-                            </div>
-                            <span className={`px-2 py-1 rounded text-sm ${
-                              transaction.status === 'completed' ? 'bg-green-200 text-green-800' :
-                              transaction.status === 'cancelled' ? 'bg-red-200 text-red-800' :
-                              'bg-orange-200 text-orange-800'
-                            }`}>
-                              {transaction.status === 'completed' ? 'Completada' :
-                               transaction.status === 'cancelled' ? 'Cancelada' : 
-                               'Pago Demorado'}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
+  <div className="mt-4 space-y-3">
+    {groupTransactions
+      .filter(t => t.status !== 'pending')
+      .map(transaction => (
+        <div 
+          key={transaction.id} 
+          className={`p-3 rounded-lg ${
+            transaction.status === 'completed' ? 'bg-green-50 border-green-200' :
+            transaction.status === 'cancelled' ? 'bg-red-50 border-red-200' :
+            'bg-orange-50 border-orange-200'
+          } border`}
+        >
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="font-medium">
+                {transaction.type === 'buy' ? 'Compra' : 'Venta'} de {Number(transaction.amount).toLocaleString('en-US')} {transaction.item}
+              </p>
+              {transaction.client && (
+                <>
+                  <p className="text-sm text-gray-600">Cliente: {transaction.client.name}</p>
+                  {/* Add this line to display the address */}
+                  <p className="text-sm text-gray-600">Dirección: {transaction.client.address}</p>
+                </>
+              )}
+              {/* Rest of existing code */}
+            </div>
+            {/* Rest of existing code */}
+          </div>
+        </div>
+      ))}
+  </div>
+)}
               </div>
             ))}
         </div>
